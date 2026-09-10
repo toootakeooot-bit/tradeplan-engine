@@ -1,0 +1,31 @@
+TC4-7 fixed-fixture regression execution record
+
+Execution environment: local static harness dry-run against the connector-verified fixture fields consumed by the repository harness.
+Execution time UTC: 2026-09-10T11:59:59Z
+Repository-root command specified by the committed harness:
+  python tests/tc4_7/test_fixed_fixture_regression.py
+
+Result summary:
+  TESTABLE       20
+  PASS           20
+  FAIL            0
+  NOT_TESTABLE    5
+
+NOT_TESTABLE:
+  NT01 Current INVALID positive recognition — EVIDENCE_NOT_AVAILABLE
+  NT02 True same-axis Structured/Text conflict resolution — EVIDENCE_NOT_AVAILABLE
+  NT03 Alternative Scenario automatic transition — EVIDENCE_NOT_AVAILABLE
+  NT04 WAIT release runtime evaluation — OUT_OF_SCOPE
+  NT05 Invalidation runtime evaluation — OUT_OF_SCOPE
+
+Determinism check:
+  run 1 SHA-256: e7d9cdeb3bc44796b15033af58daa419e256ea9b359b7b7b8fe7d111afdec802
+  run 2 SHA-256: e7d9cdeb3bc44796b15033af58daa419e256ea9b359b7b7b8fe7d111afdec802
+  cmp result: identical
+  determinism: PASS
+
+Important scope note:
+- This establishes deterministic regression behavior for the fixed saved semantics consumed by the harness.
+- It does not establish TradingCursor Native determinism.
+- TradingCursor was not re-executed.
+- No GitHub Actions workflow or production runtime was invoked.

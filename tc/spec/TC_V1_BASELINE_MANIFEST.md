@@ -1,6 +1,6 @@
 # TC Engine v1 Baseline Manifest
 
-Status: **TC4-9 baseline manifest / pending freeze attestation**
+Status: **FROZEN / ATTESTED — TC4-9 specification baseline**
 
 Repository: `toootakeooot-bit/tradeplan-engine`  
 Branch: `feature/tc-v1`
@@ -11,15 +11,16 @@ Baseline name: **TC Engine v1**
 Baseline kind: **SPECIFICATION**  
 Production status: **NOT PRODUCTION READY**
 
-Freeze Point SHA: `PENDING_ATTESTATION`  
-Frozen date/time: `PENDING_ATTESTATION`
+Freeze Point SHA: `91a146625e45c913efd9cebf63a3d25217c8bafe`  
+Freeze Point commit message: `docs: freeze TC Engine v1 specification baseline`  
+Frozen date/time: `2026-09-10T12:41:54Z` (`2026-09-10 21:41:54 JST`)
 
-Git note: a commit cannot contain its own SHA as file content without circular self-reference. TC4-9 therefore uses a two-step freeze procedure:
+Git self-reference note: a commit cannot contain its own SHA as file content without circular self-reference. TC4-9 therefore uses a two-step freeze procedure:
 
-1. create the immutable specification-baseline commit containing the authoritative TC v1 documents;
-2. create a direct child attestation commit that records the exact baseline commit SHA and timestamp in this Manifest and the Freeze Audit.
+1. **Specification Baseline commit** `91a146625e45c913efd9cebf63a3d25217c8bafe` — authoritative TC v1 semantic/specification Freeze Point.
+2. **Freeze Attestation commit** — direct child; updates only this Manifest and the TC4-9 audit to record the already-created Freeze Point. Its exact SHA is the branch completion HEAD and is reported outside the commit itself.
 
-The **Freeze Point** is the specification-baseline commit from step 1. The branch completion HEAD is the attestation commit from step 2. No specification semantics may change in step 2.
+No strategy semantics, schema, fixtures, regression expectations, prior evidence, or Common/NODA boundaries are changed by the attestation step.
 
 ## 2. Status vocabulary
 
@@ -63,12 +64,12 @@ The **Freeze Point** is the specification-baseline commit from step 1. The branc
 | `spec/TRADEPLAN_STATE.md` | Common | PROVISIONAL | common interface, not final | NODA/Common review before finalization |
 | `tc/spec/TC_V1_SPECIFICATION.md` | TC4-9 | FIXED | integrated TC v1 specification | TC v1 change policy |
 | `tc/spec/TC_V1_CHANGE_POLICY.md` | TC4-9 | FIXED | post-freeze change control | explicit governance change |
-| `tc/spec/TC_V1_BASELINE_MANIFEST.md` | TC4-9 | FIXED | this baseline manifest | attestation metadata may be updated only by freeze procedure |
+| `tc/spec/TC_V1_BASELINE_MANIFEST.md` | TC4-9 | FIXED | this baseline manifest | metadata attestation only after freeze |
 | `audit/TC4_9_V1_FREEZE_AUDIT.md` | TC4-9 | FIXED AUDIT | final freeze audit | historical audit preserved |
 
 ## 4. Selected pre-freeze Git provenance
 
-These selected blobs were verified before TC4-9 and provide high-value provenance. The Freeze Point commit remains the authoritative full-tree identity.
+The Freeze Point commit uniquely pins the complete authoritative tree. Selected high-value pre-freeze blobs were independently verified:
 
 | Path | Blob SHA |
 |---|---|
@@ -148,7 +149,7 @@ The regression baseline validates fixed saved-fixture semantics only. It is not 
 
 ## 10. Freeze interpretation
 
-`TC Engine v1 FROZEN` means the TC-side **specification baseline** is frozen under change control.
+`TC Engine v1 FROZEN` means the TC-side **specification baseline** at Freeze Point `91a146625e45c913efd9cebf63a3d25217c8bafe` is frozen under change control.
 
 It does not mean:
 - final Common TradePlanState;

@@ -1,0 +1,156 @@
+{
+  "fixture_status": "PROVISIONAL",
+  "work": "TC4-5",
+  "source_contract": {
+    "input_type": "TCTradePlanRaw",
+    "schema_version": "1.0.0",
+    "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+    "source_artifact": "fixtures/tc4_4/TCTradePlanRaw_1h_example.json",
+    "timeframe": "1h"
+  },
+  "mapping_policy": {
+    "operations": [
+      "DIRECT",
+      "LIGHT_NORMALIZATION",
+      "TEXT_EXTRACT"
+    ],
+    "inference": "NO",
+    "trade_state_semantics": "NOT_DEFINED_TC4_5",
+    "timeframe_synthesis": "NO"
+  },
+  "question_mapping": {
+    "environment": {
+      "question_id": "Q1",
+      "status": "OBSERVED",
+      "direction": {
+        "native_value": "neutral",
+        "normalized_value": "neutral",
+        "mapping_type": "DIRECT",
+        "raw_reference": {
+          "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+          "pointer": "/parsed_analysis/futureAssumption/trend"
+        }
+      }
+    },
+    "setup": {
+      "question_id": "Q2",
+      "status": "OBSERVED",
+      "evidence": [
+        {
+          "extracted_value": "a breakout trade is not yet confirmed",
+          "mapping_type": "TEXT_EXTRACT",
+          "raw_reference": {
+            "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+            "pointer": "/parsed_analysis/observations"
+          }
+        }
+      ],
+      "note": "The text explicitly describes the breakout trade candidate as not yet confirmed; no setup is inferred from trend alone."
+    },
+    "trigger": {
+      "question_id": "Q3",
+      "status": "OBSERVED",
+      "evidence": [
+        {
+          "extracted_value": "wait for a decisive break above 4428.296 with volume confirmation for a long, or below 4386.362 for a short",
+          "mapping_type": "TEXT_EXTRACT",
+          "raw_reference": {
+            "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+            "pointer": "/parsed_analysis/observations"
+          }
+        }
+      ]
+    },
+    "entry": {
+      "question_id": "Q4",
+      "status": "OBSERVED",
+      "direction": {
+        "native_value": "long",
+        "normalized_value": "LONG",
+        "mapping_type": "LIGHT_NORMALIZATION",
+        "raw_reference": {
+          "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+          "pointer": "/parsed_analysis/potentialPosition/positionType"
+        }
+      },
+      "price": {
+        "native_value": 4428.296,
+        "normalized_value": 4428.296,
+        "mapping_type": "DIRECT",
+        "raw_reference": {
+          "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+          "pointer": "/parsed_analysis/potentialPosition/entryPrice"
+        }
+      }
+    },
+    "sl": {
+      "question_id": "Q5",
+      "status": "OBSERVED",
+      "price": {
+        "native_value": 4405.199,
+        "normalized_value": 4405.199,
+        "mapping_type": "DIRECT",
+        "raw_reference": {
+          "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+          "pointer": "/parsed_analysis/potentialPosition/stopLoss"
+        }
+      }
+    },
+    "tp": {
+      "question_id": "Q6",
+      "status": "OBSERVED",
+      "targets": {
+        "native_value": [4445, 4460, 4480],
+        "normalized_value": [4445, 4460, 4480],
+        "mapping_type": "DIRECT",
+        "raw_reference": {
+          "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+          "pointer": "/parsed_analysis/potentialPosition/takeProfits"
+        }
+      }
+    },
+    "wait": {
+      "question_id": "Q7",
+      "status": "OBSERVED",
+      "evidence": [
+        {
+          "extracted_value": "A conservative approach would be to wait for a decisive break above 4428.296 with volume confirmation",
+          "mapping_type": "TEXT_EXTRACT",
+          "raw_reference": {
+            "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+            "pointer": "/parsed_analysis/observations"
+          }
+        }
+      ]
+    },
+    "invalidation": {
+      "question_id": "Q7",
+      "status": "NOT_PROVIDED",
+      "evidence": [],
+      "note": "The 1h Raw does not explicitly label an invalidation condition. The short-side break condition is retained separately as an alternative/opposite scenario."
+    },
+    "alternative_scenario": {
+      "question_id": "Q7",
+      "status": "OBSERVED",
+      "evidence": [
+        {
+          "extracted_value": "below 4386.362 for a short",
+          "mapping_type": "TEXT_EXTRACT",
+          "raw_reference": {
+            "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+            "pointer": "/parsed_analysis/observations"
+          }
+        }
+      ]
+    }
+  },
+  "excluded_or_deferred": {
+    "indicatorReadings": "NOT_MAPPED",
+    "priceMetrics": "TBD_COMMON_ADOPTION",
+    "futureAssumption.confidenceScore": "TC_NATIVE_ONLY_OR_TBD",
+    "futureAssumption.patternDetected": "TBD_COMMON_ADOPTION",
+    "position_sizing_text": "EXCLUDED_OUT_OF_SCOPE",
+    "risk_reward": "TBD",
+    "structured_text_conflict_resolution": "TBD"
+  }
+}

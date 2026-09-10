@@ -1,0 +1,25 @@
+{
+  "fixture_status": "PROVISIONAL_STATIC_MAPPING_CASE",
+  "work": "TC4-5",
+  "source_evidence": {
+    "source_run_id": "TC4-2-OANDA-XAUUSD-20260910-01",
+    "source_record_id": "TC4-2-OANDA-XAUUSD-20260910-01:02",
+    "source_raw_artifact": "fixtures/tc4_2/TC4-2-OANDA-XAUUSD-20260910-01/raw_4h.json",
+    "timeframe": "4h",
+    "reference_basis": "TC4-4 record identity convention; no separate TCTradePlanRaw 4h wrapper fixture is persisted in TC4-5"
+  },
+  "question_mapping": {
+    "trigger": {
+      "question_id": "Q3",
+      "status": "NOT_PROVIDED",
+      "evidence": [],
+      "note": "The Raw mentions MACD crossover/support and recommends current-price entry, but does not state a pre-entry activation condition. No Trigger is inferred."
+    }
+  },
+  "guardrails": {
+    "macd_crossover_promoted_to_trigger": false,
+    "support_commentary_promoted_to_trigger": false,
+    "missing_trigger_blocks_provisional_mapping": false,
+    "inference": "NO"
+  }
+}

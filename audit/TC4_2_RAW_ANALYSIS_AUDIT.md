@@ -1,84 +1,140 @@
-# TC4-2 Raw Analysis Audit
+# TC4-2 Raw Analysis Audit — TC4-2R reflected restart
 
-Repository: \`toootakeooot-bit/tradeplan-engine\`  
-Branch: \`feature/tc-v1\`  
-Start HEAD: \`fbf8a5a1df98bca6b3f57de0bf6d5f857d16f364\`
+Repository: `toootakeooot-bit/tradeplan-engine`  
+Branch: `feature/tc-v1`  
+Restart start HEAD: `be4835cabfa5d505d3c12d79c58c616f879ec0ac`
 
 ## Result
 
-**INSUFFICIENT OBSERVATION**
+**PASS WITH NOTES**
 
-TC4-2 was started, but the required fixed Market Input / execution conditions were not available. The work is intentionally stopped before TC4-3.
+Formal mode:
+
+```text
+survey_mode = TC_NATIVE_RAW_SURVEY
+comparison_level = LEVEL_C
+```
+
+Formal run: `TC4-2-OANDA-XAUUSD-20260910-01`
 
 ## Hard Gate audit
 
-| Hard Gate | Result | Note |
+| Hard Gate | Result | Evidence / note |
 |---|---|---|
-| Repository is tradeplan-engine | PASS | Correct repository used. |
-| Branch is feature/tc-v1 | PASS | Correct branch used. |
-| Started from TC4-1 HEAD | PASS | Start HEAD matches \`fbf8a5a1...\`. |
-| TC4-0 responsibility unchanged | PASS | No responsibility document changed. |
-| TC4-1 Input Contract maintained | PASS | Input contract not modified. |
-| Fixed Market Input used | NOT MET | No compliant fixture exists in repository and exact artifact input cannot be supplied through current callable TC interface. |
-| NODA rules not injected | PASS | No TC analysis run was contaminated with NODA rules. |
-| Raw Response preserved | NOT APPLICABLE / NOT MET | No compliant Raw Response exists. |
-| Raw and classification separated | PASS | No synthetic Raw Response created; classification explicitly records missing observation. |
-| Environment observed | NOT MET | No compliant run. |
-| Setup observed | NOT MET | No compliant run. |
-| Trigger observed | NOT MET | No compliant run. |
-| Entry observed | NOT MET | No compliant run. |
-| SL observed | NOT MET | No compliant run. |
-| TP observed | NOT MET | No compliant run. |
-| Wait / Invalidation observed | NOT MET | No compliant run. |
-| TC-native fields recorded | NOT MET | No compliant run; no speculative fields promoted. |
-| Missing fields not supplemented by ChatGPT | PASS | No strategy content invented. |
-| No answer labels / results used | PASS | None used. |
-| No Position Size data mixed in | PASS | None used. |
-| No unsupported repetition/threshold invented | PASS | Repeat count remains TBD. |
-| TCTradePlanRaw not formalized | PASS | Not formalized. |
-| Adapter / Normalizer not implemented | PASS | Not implemented. |
-| trade-plan-a unchanged | PASS | No write operation performed against that repository. |
-| main not merged | PASS | TC4-2 work remains on feature branch. |
+| Repository is tradeplan-engine | PASS | Correct repository. |
+| Branch is feature/tc-v1 | PASS | Correct branch. |
+| Started from TC4-2R HEAD | PASS | Restart baseline exactly `be4835ca...`. |
+| survey_mode fixed | PASS | `TC_NATIVE_RAW_SURVEY`. |
+| comparison_level fixed | PASS | `LEVEL_C`. |
+| TradingCursor Native Analysis executed | PASS | OANDA / XAUUSD formal run. |
+| D1 executed | PASS | `1D` completed. |
+| H4 executed | PASS | `4h` completed. |
+| H1 executed | PASS | `1h` completed. |
+| M15 executed | PASS | `15m` completed. |
+| 4TF Raw independently retained | PASS | Four separate Raw files. |
+| Raw preserved before mapping | PASS | Raw files are separate from observation matrix. |
+| source retained | PASS | OANDA. |
+| symbol retained | PASS | XAUUSD. |
+| interval retained | PASS | 1D / 4h / 1h / 15m. |
+| model result retained | PASS | `qwen.qwen3-vl-235b-a22b` returned on all formal calls. |
+| timestamp retained | PASS | Returned UTC timestamps retained. |
+| chartId where available retained | PASS | Derived only from explicit Raw action_url query value and recorded in manifest. |
+| Q1 Environment observed/classified | PASS | Per-TF mapping completed. |
+| Q2 Setup observed/classified | PASS | Per-TF mapping completed. |
+| Q3 Trigger observed/classified | PASS | 1h OBSERVED; other formal TFs NOT_PROVIDED. Missing values not filled. |
+| Q4 Entry observed/classified | PASS | Explicit potentialPosition data. |
+| Q5 SL observed/classified | PASS | Explicit stopLoss data. |
+| Q6 TP observed/classified | PASS | Explicit takeProfits data. |
+| Q7 Wait / Invalidation observed/classified | PASS | Wait and invalidation/alternative aspects kept distinct. |
+| NOT_PROVIDED allowed | PASS | Used for absent Trigger / Wait sub-aspects. |
+| AMBIGUOUS allowed | PASS | Contract retained; not forced where no ambiguity needed. |
+| Raw and Question Mapping separated | PASS | Separate Raw and `observation_matrix.md`. |
+| EXTRACT only for semantic mapping | PASS | No missing strategic field created. |
+| LIGHT NORMALIZATION only for representation | PASS | No added strategic meaning. |
+| INFERENCE absent | PASS | No indicator commentary promoted to Trigger without explicit pre-entry condition. |
+| NODA rules injected | NO / PASS | No NODA terminology or rule logic supplied to TradingCursor. |
+| Position Size promoted to common answer | NO / PASS | Raw advice retained but excluded as out of scope. |
+| ChatGPT 4TF synthesis created | NO / PASS | Four TFs remain independent. |
+| TradingCursor answer correctness scored | NO / PASS | No quality or outcome scoring. |
+| LEVEL C described as fair NODA-vs-TC comparison | NO / PASS | Explicitly prohibited. |
+| TC4-0 responsibility changed | NO / PASS | Responsibility baseline unchanged. |
+| TC4-1 discarded | NO / PASS | TC4-1 remains; TC4-2R addendum governs LEVEL C survey use. |
+| TCTradePlanRaw finalized | NO / PASS | Only candidate fields recorded. |
+| Adapter / Normalizer implemented | NO / PASS | No implementation added. |
+| trade-plan-a changed | NO / PASS | No writes performed to that repository. |
+| main merged/changed by TC4-2 | NO / PASS | Work remains feature-only. |
 
-## Blocking conditions
+## Formal Raw evidence
 
-### Blocker 1 — no fixed TC4-1 fixture
+The formal native calls all returned `completed`:
 
-The repository \`fixtures/\` contains no valid \`input_set_id\` with fixed D1/H4/H1/M15 artifacts and required provenance metadata.
+- 1D: 2026-09-10T10:13:39.412Z, chartId `b03658c0-d0f8-431b-b819-87f841d54e7f`
+- 4h: 2026-09-10T10:14:05.800Z, chartId `914e5b19-6c30-4e33-93bd-ff0a4fc1df57`
+- 1h: 2026-09-10T10:14:36.173Z, chartId `db4c53c3-20c1-43e6-a2e8-d1f823a5f64a`
+- 15m: 2026-09-10T10:15:01.090Z, chartId `37a6052b-8def-4837-8793-8006966c03af`
 
-### Blocker 2 — callable TradingCursor interface mismatch
+One additional 1h live-repeat call completed at 2026-09-10T10:15:30.706Z, chartId `a53a8f2f-940b-4c51-826f-b1810303e45f`.
 
-The available TradingCursor analysis interface is asset/timeframe driven and does not expose:
+## Question mapping audit
 
-- prepared-artifact input;
-- four-artifact input-set binding;
-- custom Phase A prompt;
-- custom Phase B prompt.
+| Question | Formal observation conclusion |
+|---|---|
+| Q1 Environment | OBSERVED on all four TFs |
+| Q2 Setup | OBSERVED on all four TFs |
+| Q3 Trigger | OBSERVED on initial 1h only; NOT_PROVIDED on 1D/4h/15m |
+| Q4 Entry | OBSERVED on all four TFs |
+| Q5 SL | OBSERVED on all four TFs |
+| Q6 TP | OBSERVED on all four TFs |
+| Q7 Wait / Invalidation | OBSERVED on all four TFs through explicit wait and/or invalidation/alternative conditions; sub-aspects remain separate |
 
-Calling it against live/current chart data would not demonstrate compliance with the fixed Market Input contract.
+## Inference audit
 
-## Why no live-data substitution was performed
+Potential ambiguity was deliberately handled conservatively.
 
-Substituting TradingCursor's live chart requests would weaken the experimental control:
+Indicator crossover, breakout, rejection or pullback wording was not automatically treated as an Entry Trigger. A Q3 Trigger was accepted only where the Raw explicitly prescribed waiting for a decisive break/volume confirmation before a long or an opposite break for a short.
 
-- the exact same four artifacts cannot be proven;
-- capture state may differ between calls;
-- the exact same set cannot be passed later to NODA② as an artifact set;
-- Phase A and Phase B request modes cannot be controlled through the exposed call.
+No hidden reasoning sequence is claimed.
 
-TC4-2 therefore follows the user's explicit instruction to leave unknowns unknown.
+## Out-of-scope Raw content audit
 
-## Files changed by TC4-2
+The initial formal 1h Raw explicitly contains position-sizing advice. It is preserved verbatim in the Raw response file.
 
-- \`tc/spec/TC4_2_RAW_ANALYSIS_SURVEY.md\`
-- \`audit/TC4_2_RAW_ANALYSIS_AUDIT.md\`
+Mapping disposition:
 
-No implementation code is added.
+```text
+Raw: KEEP
+Common Question mapping: EXCLUDE_OUT_OF_SCOPE
+```
 
-## Final audit status
+TC4-0 Position Sizing boundary therefore remains intact.
 
-**TC4-2 = INSUFFICIENT OBSERVATION**
+## Repeatability audit
 
-**TC4-3 = HOLD**
+Mode: `LIVE REPEATABILITY OBSERVATION`.
 
-Resume TC4-2 only after a compliant fixed Market Input and a compatible TradingCursor execution path are available.
+The formal 1h and repeat 1h runs used the same request identity but not a frozen market input. Observed differences include trend, entry price, SL, TP, pattern and entry timing/state. Both proposed LONG direction and confidence 0.65.
+
+Classification: **VALUE_VARIATION**.
+
+The cause is not attributed to model randomness because live market-data change cannot be separated from model output variation.
+
+## Phase audit
+
+- Phase A / Native Default Analysis: **EXECUTED**.
+- Phase B / custom minimal trade-plan prompt: **NOT_SUPPORTED** by the confirmed interface; no pseudo-Phase-B output created.
+
+## Handoff audit
+
+Actual Raw evidence now supports TC4-3 if TC4-3 is scoped as:
+
+**TC出力判断構造定義 / TC Observable Decision Structure**.
+
+It does not support a claim about TradingCursor hidden internal reasoning order.
+
+TC4-4 may use observed Raw fields as schema candidates, but no schema is finalized by TC4-2.
+
+## Final audit verdict
+
+**TC4-2 = PASS WITH NOTES**
+
+**TC4-3 (Observable Decision Structure) = GO, but not started.**

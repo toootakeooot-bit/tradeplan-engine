@@ -1,255 +1,204 @@
 # TC4-2 — TradingCursor Raw Analysis Survey
 
-Status: **INSUFFICIENT OBSERVATION**
+Status: **PASS WITH NOTES**
 
-Repository: \`toootakeooot-bit/tradeplan-engine\`  
-Branch: \`feature/tc-v1\`  
-Start HEAD: \`fbf8a5a1df98bca6b3f57de0bf6d5f857d16f364\`
+Repository: `toootakeooot-bit/tradeplan-engine`  
+Branch: `feature/tc-v1`  
+Restart baseline: `be4835cabfa5d505d3c12d79c58c616f879ec0ac`
 
-## 1. Survey objective
+## 1. Survey mode
 
-TC4-2 is intended to observe what TradingCursor itself returns from one fixed, strategy-neutral prepared Market Input, without NODA rule injection, ChatGPT supplementation, answer labels, position sizing, or post-hoc outcome information.
+```text
+survey_mode = TC_NATIVE_RAW_SURVEY
+comparison_level = LEVEL_C
+```
 
-The required observation flow remains:
+This survey observes TradingCursor Native output. It is not a LEVEL A/B NODA-vs-TC fair-performance comparison.
 
-Market Input
-→ TradingCursor native analysis
-→ Raw Response
-→ Observation classification
+Historical note: the first TC4-2 attempt stopped as INSUFFICIENT OBSERVATION. TC4-2P established actual interface capability and TC4-2R authorized LEVEL C restart under the Common Question Contract.
 
-No TradingCursor strategy logic is implemented in this work.
+## 2. Formal target and run
 
-## 2. Required input condition inherited from TC4-1
+Formal run: `TC4-2-OANDA-XAUUSD-20260910-01`
 
-A valid TC4-2 observation requires one fixed \`input_set_id\` containing the exact same four prepared artifacts:
+- source/exchange: `OANDA`
+- symbol: `XAUUSD`
+- timeframes: `1D`, `4h`, `1h`, `15m`
+- Phase A: TradingCursor Native Default Analysis — executed
+- Phase B: `NOT_SUPPORTED` by the currently confirmed interface
+- four timeframes were invoked and retained independently
+- no ChatGPT-created four-timeframe synthesis was produced
 
-- D1
-- H4
-- H1
-- M15
+A separate `1h` repeat call was also captured as a LIVE REPEATABILITY OBSERVATION.
 
-with the TC4-1 required identity and provenance fields:
+## 3. Raw acquisition result
 
-- \`input_set_id\`
-- \`symbol\`
-- \`observation_timestamp\`
-- per artifact: \`timeframe\`, \`artifact_ref\`, \`capture_timestamp\`, \`source_id\`
+| TF | Status | Timestamp UTC | Model | chartId |
+|---|---|---|---|---|
+| D1 / 1D | completed | 2026-09-10T10:13:39.412Z | qwen.qwen3-vl-235b-a22b | b03658c0-d0f8-431b-b819-87f841d54e7f |
+| H4 / 4h | completed | 2026-09-10T10:14:05.800Z | qwen.qwen3-vl-235b-a22b | 914e5b19-6c30-4e33-93bd-ff0a4fc1df57 |
+| H1 / 1h | completed | 2026-09-10T10:14:36.173Z | qwen.qwen3-vl-235b-a22b | db4c53c3-20c1-43e6-a2e8-d1f823a5f64a |
+| M15 / 15m | completed | 2026-09-10T10:15:01.090Z | qwen.qwen3-vl-235b-a22b | 37a6052b-8def-4837-8793-8006966c03af |
+| H1 repeat / 1h | completed | 2026-09-10T10:15:30.706Z | qwen.qwen3-vl-235b-a22b | a53a8f2f-940b-4c51-826f-b1810303e45f |
 
-The same fixed set must be reusable later by both NODA② and TC②.
+Raw responses are retained under `fixtures/tc4_2/TC4-2-OANDA-XAUUSD-20260910-01/` before the Question mapping record.
 
-## 3. Available input-set survey
+## 4. Native Raw structure actually observed
 
-At TC4-2 start, the repository contains no TC4-1-compliant fixed Market Input fixture under \`fixtures/\`.
+The formal runs explicitly contained the following Raw structures/metadata:
 
-Observed repository state:
-
-- \`fixtures/.gitkeep\` exists;
-- no D1/H4/H1/M15 artifact set is present;
-- no \`input_set_id\` fixture is present;
-- no artifact references, capture timestamps, or source identifiers for a fixed 4TF set are present.
-
-Therefore no repository input set is currently eligible for the TC4-2 experiment.
-
-### Surveyed input_set list
-
-**NONE — no valid fixed input set available.**
-
-## 4. TradingCursor execution-interface capability observed
-
-The currently callable TradingCursor analysis interface accepts:
-
-- exchange
+- response status
+- exchange/source
 - symbol
 - interval
+- `analysis`
+- model
+- timestamp
+- `potentialPosition`
+- `indicatorReadings`
+- `priceMetrics`
+- `futureAssumption`
+- `observations`
+- `action_url`
+- chartId embedded in the action URL
 
-and returns a TradingCursor-generated analysis for that requested asset/timeframe.
+Observed recurring nested items include:
 
-The callable interface does **not** expose parameters for:
+- `potentialPosition.entryPrice`
+- `potentialPosition.positionType`
+- `potentialPosition.takeProfits`
+- `potentialPosition.stopLoss`
+- RSI / EMA / Volume / Bollinger Bands / MACD readings
+- support / current price / resistance metrics
+- trend
+- confidenceScore
+- patternDetected
+- natural-language observations / alternative scenario text
 
-- \`input_set_id\`;
-- user-supplied D1/H4/H1/M15 \`artifact_ref\` values;
-- fixed uploaded chart images;
-- a custom natural-language analysis prompt;
-- a separate Phase A prompt and Phase B prompt over the exact same supplied artifact set.
+These are **TC_NATIVE_FIELD_CANDIDATE** observations only. TC4-2 does not finalize TCTradePlanRaw schema.
 
-Consequently, using that interface against live/current charts would not prove that the exact TC4-1 fixed four-artifact Market Input was consumed.
+## 5. Common Question mapping
 
-It also would not allow the required Phase A / Phase B prompt distinction to be controlled.
+Mapping follows `spec/QUESTION_CONTRACT.md`:
 
-TC4-2 does not substitute live requests for the required fixed Market Input because doing so would make the observation non-compliant with the TC4-1 contract.
+- EXTRACT = YES
+- LIGHT NORMALIZATION = YES
+- INFERENCE = NO
 
-## 5. Phase A — Natural Raw Analysis
+### Per-timeframe result
 
-Status: **NOT EXECUTED**
+| Question | 1D | 4h | 1h | 15m |
+|---|---|---|---|---|
+| Q1 Environment | OBSERVED | OBSERVED | OBSERVED | OBSERVED |
+| Q2 Setup | OBSERVED | OBSERVED | OBSERVED | OBSERVED |
+| Q3 Trigger | NOT_PROVIDED | NOT_PROVIDED | OBSERVED | NOT_PROVIDED |
+| Q4 Entry | OBSERVED | OBSERVED | OBSERVED | OBSERVED |
+| Q5 SL | OBSERVED | OBSERVED | OBSERVED | OBSERVED |
+| Q6 TP | OBSERVED | OBSERVED | OBSERVED | OBSERVED |
+| Q7 Wait / Invalidation | OBSERVED | OBSERVED | OBSERVED | OBSERVED |
 
-Reason:
+Details are in the formal run `observation_matrix.md`.
 
-1. no valid fixed TC4-1 Market Input fixture is available;
-2. the available TradingCursor callable interface cannot receive the exact prepared 4TF artifact set;
-3. the available callable interface does not expose a custom prompt channel needed to preserve the intended minimal Phase A instruction.
+### Important Q3 boundary
 
-No Raw Response is fabricated or inferred.
+The 1D/4h/15m Raw contains indicator, breakout, crossover or pullback language, but the mapper did not automatically reinterpret that text as a pre-entry Trigger where TradingCursor simultaneously recommended current-price entry. Those Q3 records remain `NOT_PROVIDED`.
 
-## 6. Phase B — Minimal Trade Plan Request
+The initial 1h Raw explicitly says to wait for a decisive break above a stated level with volume confirmation for a long, or a break below another level for a short. That qualifies as Q3 `OBSERVED` without inference.
 
-Status: **NOT EXECUTED**
+## 6. Q7 split behavior
 
-Reason:
+Q7 may contain independent sub-aspects.
 
-1. no valid fixed TC4-1 Market Input fixture is available;
-2. the available TradingCursor callable interface cannot replay that exact fixed artifact set;
-3. the callable interface does not expose a distinct custom prompt channel for a minimal trade-plan request.
+Observed patterns include:
 
-No Phase B output is fabricated from Phase A or from unrelated TradingCursor requests.
+- explicit WAIT in the initial 1h run;
+- explicit invalidation or alternative/opposite scenario conditions in other formal Raw responses.
 
-## 7. Output item observations
+An alternative scenario is not treated as proof that the current state is WAIT.
 
-Because no valid TC4-2 run occurred, the following classifications remain unobserved rather than guessed.
+## 7. Out-of-scope content
 
-| TradePlan component | TC4-2 observation |
-|---|---|
-| Environment | NOT_OBSERVED |
-| Setup | NOT_OBSERVED |
-| Trigger | NOT_OBSERVED |
-| Entry | NOT_OBSERVED |
-| SL | NOT_OBSERVED |
-| TP | NOT_OBSERVED |
-| Wait / Invalidation | NOT_OBSERVED |
+The initial 1h Raw explicitly contains position-sizing advice in its natural-language analysis. This content is preserved in Raw but excluded from Q1-Q7 as `EXCLUDE_OUT_OF_SCOPE`.
 
-These statuses mean **no compliant observation was available**. They do not mean TradingCursor is incapable of producing the fields.
+Generic risk-management and risk/reward commentary was also observed in other Raw responses. TC4-0 still prohibits Position Sizing authority inside ②.
 
-## 8. TradingCursor-native fields
+## 8. Four-timeframe integration
 
-No TC-native field candidate is promoted from speculation.
+**NONE.**
 
-The following examples remain survey targets only and are **not confirmed observations** in this TC4-2 run:
+TradingCursor was called once per timeframe. TC4-2 did not combine the four analyses into a new TradingCursor 'overall' decision and does not claim TradingCursor itself performed multi-timeframe integration.
 
-- confidence / score / probability;
-- indicator state;
-- volatility characterization;
-- pattern name;
-- liquidity information;
-- risk/reward;
-- reasoning text;
-- warnings;
-- alternative scenario.
+## 9. Live repeatability observation
 
-TC4-4 must not treat these as confirmed fields based on this document.
+The 1h request was repeated once using the same request identity (`OANDA`, `XAUUSD`, `1h`). This is not exact-input replay because the native market source is live.
 
-## 9. Output variability
+Observed between the two 1h responses:
 
-Status: **NOT OBSERVED**
+- `positionType`: long -> long
+- `futureAssumption.trend`: neutral -> bullish
+- `entryPrice`: 4428.296 -> 4395.445
+- `stopLoss`: 4405.199 -> 4375
+- take-profit values changed
+- `patternDetected`: consolidation -> bullish reversal near support with MACD crossover
+- confidenceScore: 0.65 -> 0.65
+- first run explicitly recommended waiting for breakout confirmation; repeat suggested current-price long entry
 
-A compliant repeatability experiment requires multiple TradingCursor runs against the same fixed Market Input.
+Classification: **VALUE_VARIATION**.
 
-Because the current interface cannot demonstrate replay of the exact four prepared artifacts, no repeat count is invented and no live rerun is used as a proxy.
+A LONG/SHORT `DECISION_VARIATION` was not observed in this pair. Because the source is live, the survey does not attribute the differences specifically to model randomness versus market-data change.
 
-Repeat count remains:
+## 10. Quality/performance evaluation
 
-**TBD / available compliant runs**
+Not performed.
 
-## 10. Missing / ambiguous observations
+No claim is made about whether any long/short direction, entry, SL, TP, indicator statement, numerical relation or future assumption is correct.
 
-### Missing
+## 11. TC4-3 handoff evidence
 
-All strategy-output categories remain missing from a compliant TC4-2 experiment:
+The formal Raw is sufficient to support an observable output-structure work package. Examples of directly observed mappings:
 
-- Environment
-- Setup
-- Trigger
-- Entry
-- SL
-- TP
-- Wait / Invalidation
-- TC-native field inventory
-- same-input output variability
+- `futureAssumption.trend` -> Q1 Environment
+- explicit bullish/bearish setup wording and/or proposed trade candidate -> Q2 Setup
+- explicit wait-for-break/confirmation wording -> Q3 Trigger where present
+- `potentialPosition.positionType` / `entryPrice` -> Q4 Entry
+- `potentialPosition.stopLoss` -> Q5 SL
+- `potentialPosition.takeProfits` -> Q6 TP
+- explicit wait, invalidation, or alternative/opposite scenario condition -> Q7
 
-### Ambiguous
+This evidence does **not** prove TradingCursor hidden reasoning order.
 
-None are classified AMBIGUOUS because no valid Raw Response exists to interpret.
+Recommended next scope remains:
 
-## 11. Raw-response preservation
+**TC4-3 — TC出力判断構造定義 / TC Observable Decision Structure**
 
-No TradingCursor Raw Response has been committed as a TC4-2 fixture because no compliant fixed-input run was executed.
+TC4-3 GO is justified on observable-output evidence, but TC4-2 itself does not start it.
 
-This preserves the core rule:
+## 12. TC4-4 Raw-retention candidates
 
-> do not present a non-compliant live analysis as if it were the Raw Response to the fixed TC4-1 Market Input.
+Candidate evidence from actual Raw:
 
-## 12. What is required to unblock TC4-2
+- outer status / exchange / symbol / interval
+- full unmodified `analysis`
+- model
+- timestamp
+- action_url / chartId
+- `potentialPosition`
+- `indicatorReadings`
+- `priceMetrics`
+- `futureAssumption`
+- `observations`
+- run identity and execution order
 
-TC4-2 can resume when both conditions below are satisfied.
+No formal schema is created here.
 
-### A. Fixed Market Input fixture
+## 13. Final result
 
-At least one TC4-1-compliant set must be available and referenceable, containing:
+**TC4-2 = PASS WITH NOTES**
 
-- one \`input_set_id\`;
-- one symbol;
-- one observation timestamp;
-- exact D1/H4/H1/M15 artifacts;
-- timeframe identity;
-- artifact references;
-- capture timestamps;
-- source identifiers.
+Notes:
 
-### B. TradingCursor execution path compatible with the experiment
-
-The experiment needs a path that can:
-
-1. consume or visibly operate on the exact fixed chart artifacts;
-2. preserve the same artifacts between runs;
-3. execute a minimal natural analysis request (Phase A);
-4. execute a distinct minimal trade-plan request (Phase B);
-5. return/preserve the original Raw Response for each run.
-
-If the TradingCursor UI or another integration can satisfy these conditions, the resulting Raw Responses may be captured as TC4-2 fixtures and then classified without modification.
-
-## 13. TC4-3 handoff
-
-**HOLD**
-
-TC4-3 is intended to define the TC internal decision process from observed TradingCursor behavior.
-
-Proceeding now would risk inventing that process without evidence.
-
-TC4-3 should begin only after TC4-2 has at least enough compliant Raw Response material to support the proposed internal steps.
-
-## 14. TC4-4 Raw-retention candidates
-
-No field list is formally promoted from observation yet.
-
-The only retention requirements already justified independently of TradingCursor output are:
-
-- preserve the full original Raw Response;
-- preserve the related \`input_set_id\`;
-- preserve run identity / timestamp when available;
-- preserve the request mode (Phase A or Phase B);
-- preserve engine/source metadata when available.
-
-All semantic TC-native field candidates remain pending actual observation.
-
-## 15. Scope compliance
-
-TC4-2 does not modify:
-
-- TC4-0 responsibility boundaries;
-- TC4-1 input contract;
-- NODA logic;
-- TC decision logic;
-- TCTradePlanRaw formal schema;
-- TradePlanState formal schema;
-- WAIT / INVALID formal rules;
-- Adapter;
-- Normalizer;
-- Position Sizing;
-- execution;
-- \`trade-plan-a\`.
-
-No TradingCursor answer correctness or trading performance is evaluated.
-
-## 16. Interim verdict
-
-**TC4-2: INSUFFICIENT OBSERVATION**
-
-This is a controlled stop, not a fabricated PASS or FAIL of TradingCursor capability.
+1. LEVEL C only; not a fair NODA-vs-TC performance comparison.
+2. Phase B remains NOT_SUPPORTED.
+3. Q3 is not consistently provided and is intentionally not backfilled.
+4. Live repeatability showed value/state differences that cannot be isolated from market movement.
+5. Four independent timeframe outputs were not synthesized.

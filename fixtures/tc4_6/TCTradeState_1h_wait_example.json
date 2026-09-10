@@ -1,0 +1,78 @@
+{
+  "fixture_status": "PROVISIONAL_STATE_SEMANTICS_CASE",
+  "work": "TC4-6",
+  "case_id": "TC4-6-1H-WAIT-01",
+  "source": {
+    "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+    "timeframe": "1h",
+    "mapping_fixture": "fixtures/tc4_5/TCTradePlanState_1h_provisional_example.json"
+  },
+  "question_availability": {
+    "environment": "OBSERVED",
+    "setup": "OBSERVED",
+    "trigger": "OBSERVED",
+    "entry": "OBSERVED",
+    "sl": "OBSERVED",
+    "tp": "OBSERVED",
+    "wait": "OBSERVED",
+    "invalidation": "NOT_PROVIDED",
+    "alternative_scenario": "OBSERVED"
+  },
+  "plan_axis": {
+    "entry_direction": "LONG",
+    "entry_price": 4428.296,
+    "stop_loss": 4405.199,
+    "take_profits": [4445, 4460, 4480]
+  },
+  "trade_state": {
+    "model_status": "PROVISIONAL",
+    "value": "WAIT",
+    "semantic_basis": "EXPLICIT_NATIVE_TEXT",
+    "evidence": [
+      {
+        "extracted_text": "breakout trade is not yet confirmed",
+        "raw_reference": {
+          "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+          "pointer": "/parsed_analysis/observations"
+        }
+      },
+      {
+        "extracted_text": "wait for a decisive break above 4428.296 with volume confirmation",
+        "raw_reference": {
+          "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+          "pointer": "/parsed_analysis/observations"
+        }
+      }
+    ],
+    "wait_release_condition_evidence": {
+      "status": "OBSERVED",
+      "extracted_text": "decisive break above 4428.296 with volume confirmation for a long, or below 4386.362 for a short",
+      "raw_reference": {
+        "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+        "pointer": "/parsed_analysis/observations"
+      },
+      "runtime_evaluation": "NOT_IMPLEMENTED"
+    },
+    "current_invalid_evidence": {
+      "status": "NOT_OBSERVED"
+    },
+    "invalidation_rule_evidence": {
+      "status": "NOT_PROVIDED"
+    },
+    "alternative_scenario_evidence": {
+      "status": "OBSERVED",
+      "extracted_text": "below 4386.362 for a short",
+      "raw_reference": {
+        "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+        "pointer": "/parsed_analysis/observations"
+      }
+    }
+  },
+  "guardrails": {
+    "entry_sl_tp_implies_actionable": false,
+    "direction_and_state_are_same_axis": false,
+    "alternative_scenario_implies_invalid": false,
+    "runtime_wait_release_evaluator": false,
+    "inference": "NO"
+  }
+}

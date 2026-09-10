@@ -1,0 +1,61 @@
+{
+  "fixture_status": "PROVISIONAL_STATE_SEMANTICS_CASE",
+  "work": "TC4-6",
+  "case_id": "TC4-6-4H-CURRENT-ENTRY-01",
+  "source": {
+    "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:02",
+    "timeframe": "4h",
+    "mapping_fixture": "fixtures/tc4_5/TCTradePlanState_missing_trigger_example.json",
+    "raw_artifact": "fixtures/tc4_2/TC4-2-OANDA-XAUUSD-20260910-01/raw_4h.json"
+  },
+  "question_availability": {
+    "trigger": "NOT_PROVIDED",
+    "entry": "OBSERVED",
+    "invalidation_rule": "OBSERVED",
+    "alternative_scenario": "OBSERVED"
+  },
+  "trade_state": {
+    "model_status": "PROVISIONAL",
+    "value": "ACTIONABLE",
+    "semantic_basis": "EXPLICIT_NATIVE_TEXT",
+    "evidence": [
+      {
+        "extracted_text": "A long position is recommended with entry at current price",
+        "raw_reference": {
+          "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:02",
+          "pointer": "/parsed_analysis/observations"
+        }
+      }
+    ],
+    "wait_evidence": {
+      "status": "NOT_OBSERVED"
+    },
+    "invalidation_rule_evidence": {
+      "status": "OBSERVED",
+      "extracted_text": "a break below 4364.748 could invalidate the bullish setup",
+      "raw_reference": {
+        "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:02",
+        "pointer": "/parsed_analysis/observations"
+      }
+    },
+    "current_invalid_evidence": {
+      "status": "NOT_OBSERVED"
+    },
+    "alternative_scenario_evidence": {
+      "status": "OBSERVED",
+      "extracted_text": "if price fails to hold above 4380.0, consider shorting",
+      "raw_reference": {
+        "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:02",
+        "pointer": "/parsed_analysis/observations"
+      }
+    }
+  },
+  "guardrails": {
+    "missing_trigger_implies_wait": false,
+    "invalidation_rule_implies_current_invalid": false,
+    "current_price_compared_to_invalidation_rule": false,
+    "actionable_authorizes_execution": false,
+    "alternative_scenario_implies_invalid": false,
+    "inference": "NO"
+  }
+}

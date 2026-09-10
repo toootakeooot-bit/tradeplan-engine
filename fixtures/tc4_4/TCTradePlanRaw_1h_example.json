@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0.0",
+  "record_identity": {
+    "record_id": "TC4-2-OANDA-XAUUSD-20260910-01:03",
+    "source_run_id": "TC4-2-OANDA-XAUUSD-20260910-01",
+    "execution_order": 3,
+    "source_raw_artifact": "fixtures/tc4_2/TC4-2-OANDA-XAUUSD-20260910-01/raw_1h.json"
+  },
+  "wrapper_metadata": {
+    "source_work": "TC4-4",
+    "survey_mode": "TC_NATIVE_RAW_SURVEY",
+    "comparison_level": "LEVEL_C"
+  },
+  "original_response": {
+    "status": "completed",
+    "exchange": "OANDA",
+    "symbol": "XAUUSD",
+    "interval": "1h",
+    "analysis": "{\"indicatorReadings\": [{\"id\": \"RSI\", \"label\": \"RSI (Relative Strength Index, 14)\", \"values\": {\"value\": 46.51}}, {\"id\": \"EMA\", \"label\": \"EMA 20 (Exponential Moving Average)\", \"values\": {\"value\": 4405.199}}, {\"id\": \"VOL\", \"label\": \"Volume\", \"values\": {\"value\": 10177}}, {\"id\": \"BB\", \"label\": \"Bollinger Bands (20, 2)\", \"values\": {\"middle\": 4407.329, \"upper\": 4428.296, \"lower\": 4386.362}}, {\"id\": \"MACD\", \"label\": \"MACD (12, 26, 9)\", \"values\": {\"histogram\": 3.475, \"signal\": 1.352, \"macd\": -2.123}}], \"priceMetrics\": {\"supportLevels\": [4386.362, 4360], \"current_price\": 4396.655, \"resistanceLevels\": [4405.199, 4428.296]}, \"futureAssumption\": {\"trend\": \"neutral\", \"confidenceScore\": 0.65, \"patternDetected\": \"Consolidation within Bollinger Bands\"}, \"observations\": \"The XAUUSD 1-hour chart shows a consolidation phase within the Bollinger Bands, with price currently trading near the middle band at 4407.329 and slightly below the EMA 20 at 4405.199. The RSI reading of 46.51 indicates a neutral momentum, neither overbought nor oversold, suggesting a potential continuation or reversal is pending. Volume has been relatively low and consistent, with no significant spikes to confirm breakout momentum. The MACD histogram is positive at 3.475 but the MACD line (-2.123) remains below the signal line (1.352), signaling weak bullish momentum. Key support is at the lower Bollinger Band (4386.362) and a psychological level around 4360.0, while resistance lies at the EMA 20 (4405.199) and upper Bollinger Band (4428.296). Given the lack of strong directional signals and the consolidation pattern, a breakout trade is not yet confirmed. A conservative approach would be to wait for a decisive break above 4428.296 with volume confirmation for a long, or below 4386.362 for a short. Risk management should include tight stop losses if entering on a breakout, and position sizing should account for potential false breakouts in low-volume consolidation zones.\", \"potentialPosition\": {\"entryPrice\": 4428.296, \"positionType\": \"long\", \"takeProfits\": [4445, 4460, 4480], \"stopLoss\": 4405.199}, \"action_url\": \"https://www.tradingcursor.com/view?chartId=db4c53c3-20c1-43e6-a2e8-d1f823a5f64a\"}",
+    "model": "qwen.qwen3-vl-235b-a22b",
+    "timestamp": "2026-09-10T10:14:36.173Z"
+  },
+  "parsed_analysis": {
+    "indicatorReadings": [
+      {"id": "RSI", "label": "RSI (Relative Strength Index, 14)", "values": {"value": 46.51}},
+      {"id": "EMA", "label": "EMA 20 (Exponential Moving Average)", "values": {"value": 4405.199}},
+      {"id": "VOL", "label": "Volume", "values": {"value": 10177}},
+      {"id": "BB", "label": "Bollinger Bands (20, 2)", "values": {"middle": 4407.329, "upper": 4428.296, "lower": 4386.362}},
+      {"id": "MACD", "label": "MACD (12, 26, 9)", "values": {"histogram": 3.475, "signal": 1.352, "macd": -2.123}}
+    ],
+    "priceMetrics": {
+      "supportLevels": [4386.362, 4360],
+      "current_price": 4396.655,
+      "resistanceLevels": [4405.199, 4428.296]
+    },
+    "futureAssumption": {
+      "trend": "neutral",
+      "confidenceScore": 0.65,
+      "patternDetected": "Consolidation within Bollinger Bands"
+    },
+    "observations": "The XAUUSD 1-hour chart shows a consolidation phase within the Bollinger Bands, with price currently trading near the middle band at 4407.329 and slightly below the EMA 20 at 4405.199. The RSI reading of 46.51 indicates a neutral momentum, neither overbought nor oversold, suggesting a potential continuation or reversal is pending. Volume has been relatively low and consistent, with no significant spikes to confirm breakout momentum. The MACD histogram is positive at 3.475 but the MACD line (-2.123) remains below the signal line (1.352), signaling weak bullish momentum. Key support is at the lower Bollinger Band (4386.362) and a psychological level around 4360.0, while resistance lies at the EMA 20 (4405.199) and upper Bollinger Band (4428.296). Given the lack of strong directional signals and the consolidation pattern, a breakout trade is not yet confirmed. A conservative approach would be to wait for a decisive break above 4428.296 with volume confirmation for a long, or below 4386.362 for a short. Risk management should include tight stop losses if entering on a breakout, and position sizing should account for potential false breakouts in low-volume consolidation zones.",
+    "potentialPosition": {
+      "entryPrice": 4428.296,
+      "positionType": "long",
+      "takeProfits": [4445, 4460, 4480],
+      "stopLoss": 4405.199
+    },
+    "action_url": "https://www.tradingcursor.com/view?chartId=db4c53c3-20c1-43e6-a2e8-d1f823a5f64a"
+  },
+  "derived_metadata": {
+    "chart_id": {
+      "value": "db4c53c3-20c1-43e6-a2e8-d1f823a5f64a",
+      "derived_from_pointer": "/parsed_analysis/action_url",
+      "method": "url_query_parameter:chartId"
+    }
+  },
+  "parse_status": {
+    "state": "PARSED"
+  }
+}

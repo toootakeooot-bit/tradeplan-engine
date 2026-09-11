@@ -1,0 +1,37 @@
+TC-P3 Raw Storage local deterministic test evidence
+Date: 2026-09-11 JST
+Repository target: toootakeooot-bit/tradeplan-engine
+Branch target: feature/tc-prod-v1
+Start HEAD: 46ace92db06ca1157139dc93ba46e9e3652d2ccc
+
+Command:
+python -m unittest -v tests.tc_prod.test_native_client tests.tc_prod.test_adapter tests.tc_prod.test_raw_storage
+
+Result:
+Ran 31 tests
+OK
+
+P1 Native Client regression: 9 PASS / 0 FAIL
+P2 Adapter regression:      12 PASS / 0 FAIL
+P3 Raw Storage:             10 PASS / 0 FAIL
+Total:                      31 PASS / 0 FAIL
+
+P3 coverage includes:
+- configurable filesystem storage root
+- stable logical reference tcraw://v1/<source_run_id>/<order>.json
+- UTF-8 JSON-value round trip
+- exact analysis string round trip
+- unknown Native field preservation
+- no-overwrite duplicate refusal
+- independent repeat artifacts
+- source_run_id/path traversal rejection
+- invalid artifact-reference rejection
+- non-JSON/NaN rejection before publication
+- atomic publication failure injection with no final artifact/temp residue
+- unusable storage root failure
+- TC-P2 Adapter + concrete Raw Storage integration
+- preserved Original Raw available before TCTradePlanRaw output
+
+The tests ran on the current local POSIX execution environment.
+The Windows-specific os.rename publication branch is implemented but was not executed in this environment.
+This is not a live TradingCursor connectivity test and not a Trade Plan A integration test.

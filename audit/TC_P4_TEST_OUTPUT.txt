@@ -1,0 +1,36 @@
+TC-P4 Mapper local deterministic test evidence
+Date: 2026-09-11 JST
+Repository target: toootakeooot-bit/tradeplan-engine
+Branch target: feature/tc-prod-v1
+Start HEAD: 3a70e1dae96709012a210602adf7113abcf08bde
+
+Command:
+python -m unittest -v tests.tc_prod.test_mapper
+
+Result:
+Ran 10 tests
+OK
+
+P4 Mapper: 10 PASS / 0 FAIL
+
+Coverage includes:
+- frozen 1h direct/light-normalization mappings
+- frozen 1h Setup/Trigger/Wait/Alternative explicit text evidence
+- frozen 4h missing Trigger remains NOT_PROVIDED despite MACD/pattern/support commentary
+- 4h Invalidation Rule evidence and Alternative Scenario extraction remain separate evidence
+- indicators remain NOT_MAPPED
+- patternDetected remains TBD_COMMON_ADOPTION and cannot create Trigger/State
+- Position Sizing text remains excluded from mapped authority
+- every mapped value/evidence carries record_id + RFC6901 pointer; text evidence additionally carries character span
+- missing strategy fields become NOT_PROVIDED rather than inferred
+- unknown position direction representation becomes AMBIGUOUS rather than silently normalized
+- PARSE_ERROR is not converted to Question status or Trade State
+- one record / one timeframe; no 4TF aggregation surface
+- deterministic output for the same saved Raw input
+
+P1-P3 production files were not modified by TC-P4. Their previously audited baseline remains:
+- P1 Native Client: 9 PASS / 0 FAIL
+- P2 Adapter: 12 PASS / 0 FAIL
+- P3 Raw Storage: 10 PASS / 0 FAIL
+
+TC4-7 golden regression expectations were not modified. Production P4 tests cover the mapping-applicable invariants; Trade State invariants remain P5 scope.

@@ -1,0 +1,52 @@
+TC-P5 State Evaluator + Pipeline local deterministic test evidence
+Date: 2026-09-11 JST
+Repository target: toootakeooot-bit/tradeplan-engine
+Branch target: feature/tc-prod-v1
+Start HEAD: a7139bf14e148532de453a69c909bb4459c24c9e
+
+Command:
+python -m unittest -v \
+  tests.tc_prod.test_native_client \
+  tests.tc_prod.test_adapter \
+  tests.tc_prod.test_raw_storage \
+  tests.tc_prod.test_mapper \
+  tests.tc_prod.test_p5_state_pipeline
+
+Result:
+Ran 66 tests
+OK
+
+Breakdown:
+P1 Native Client regression:  9 PASS / 0 FAIL
+P2 Adapter regression:       12 PASS / 0 FAIL
+P3 Raw Storage regression:   10 PASS / 0 FAIL
+P4 Mapper regression:        10 PASS / 0 FAIL
+P5 State/Pipeline:           25 PASS / 0 FAIL
+TOTAL:                       66 PASS / 0 FAIL
+
+P5 Production TCREG:
+TCREG-01 through TCREG-20: 20 PASS / 0 FAIL
+
+P5 additional coverage:
+- fixed 1h Native Raw -> WAIT
+- fixed 4h Native Raw -> ACTIONABLE with Trigger NOT_PROVIDED
+- future invalidation rule != Current INVALID
+- Entry without explicit current-state wording -> UNDETERMINED
+- simultaneous explicit WAIT + ACTIONABLE wording -> UNDETERMINED with conflict preserved
+- saved-Raw Mapper/State determinism
+- end-to-end NativeClient -> Adapter -> FileRawStorage -> Mapper -> State Evaluator
+- Original Native response persisted before Mapping/State evaluation
+- parse failure remains upstream pipeline failure, not Trade State
+- no 4TF synthesis
+- no sizing / lot / monetary risk / execution authority
+
+NOT_TESTABLE remains unchanged:
+NT01 Current INVALID positive recognition — no genuine positive Native fixture
+NT02 true structured/text same-axis conflict resolution — no genuine fixture / policy TBD
+NT03 Alternative Scenario automatic transition — evidence/policy unavailable
+NT04 WAIT release runtime evaluation — out of scope
+NT05 invalidation runtime evaluation — out of scope
+
+Environment note:
+Tests executed on the current POSIX local execution host. The Windows-specific P3 publication branch remains unexecuted here, as already recorded in TC-P3.
+This is not live TradingCursor host connectivity and not Trade Plan A integration.

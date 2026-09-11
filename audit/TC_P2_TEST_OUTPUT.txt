@@ -1,0 +1,35 @@
+TC-P2 Adapter local deterministic test evidence
+Date: 2026-09-11 JST
+Repository target: toootakeooot-bit/tradeplan-engine
+Branch target: feature/tc-prod-v1
+Start HEAD: dd93817033a9a4b969dc55064b664c430b4bc55f
+
+Command:
+python -m unittest -v tests.tc_prod.test_native_client tests.tc_prod.test_adapter
+
+Result:
+Ran 21 tests
+OK
+
+P1 regression: 9 PASS / 0 FAIL
+P2 Adapter:     12 PASS / 0 FAIL
+Total:          21 PASS / 0 FAIL
+
+P2 coverage includes:
+- Native response preserved before analysis parsing
+- exact original analysis string retained
+- unknown outer/inner Native fields retained
+- PARSED / NOT_PARSED / PARSE_ERROR handling
+- parse error still emits Raw only after successful preservation
+- non-object JSON analysis root does not get normalized into a fake object
+- chartId derived only from parsed_analysis.action_url
+- preservation failure stops Raw output
+- blank source_raw_artifact rejected
+- provider failure remains NATIVE_TRANSPORT and is not preserved as fake Raw
+- frozen known-field type mismatch becomes RAW_OUTPUT_VALIDATION after preservation
+- deterministic record_id/source artifact separation for repeat attempts
+- Adapter does not retry provider
+- wrapper top-level fields remain within frozen TCTradePlanRaw v1.0.0 contract
+
+This is local deterministic unit-test evidence using injected fake provider/preserver boundaries.
+It is not a live TradingCursor connectivity test and not a durable-storage test.

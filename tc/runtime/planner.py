@@ -6,7 +6,6 @@ from typing import Tuple
 from tc.runtime.command import TCSpotRuntimeRequest
 from tc.runtime.symbol import ResolvedSymbol
 
-
 _INTERVALS = {
     "D1": "1D",
     "H4": "4h",
@@ -22,9 +21,22 @@ class NativeRequestPlan:
     symbol: str
     interval: str
     execution_order: int
+    role: str
 
 
-def build_4tf_plan(
+def _role_for_timeframe(request: TCSpotRuntimeRequest, timeframe: str) -> str:
+    if timeframe == request.environment_tf:
+        return "ENVIRONMENT"
+    if timeframe == request.setup_tf:
+        return "SETUP"
+    if timeframe == request.decision_tf:
+        return "DECISION"
+    if timeframe == request.optional_drilldown_tf:
+        return "CONFIRMATION"
+    return "SUPPORTING"
+
+
+def build_entry_pre_plan(
     command_request: TCSpotRuntimeRequest,
     resolved_symbol: ResolvedSymbol,
 ) -> Tuple[NativeRequestPlan, ...]:
@@ -32,8 +44,6 @@ def build_4tf_plan(
         raise ValueError("unsupported runtime request")
     if command_request.evaluation_mode != "ENTRY_PRE":
         raise ValueError("unsupported evaluation mode")
-    if tuple(command_request.timeframes) != ("D1", "H4", "H1", "M15"):
-        raise ValueError("ENTRY_PRE requires exact D1/H4/H1/M15 timeframes")
 
     return tuple(
         NativeRequestPlan(
@@ -42,6 +52,25 @@ def build_4tf_plan(
             symbol=resolved_symbol.provider_symbol,
             interval=_INTERVALS[tf],
             execution_order=index,
+            role=_role_for_timeframe(command_request, tf),
         )
-        for index, tf in enumerate(command_request.timeframes, start=1)
+        for index, tf in enumerate(command_request.initial_timeframes, start=1)
+    )
+
+
+def build_drilldown_plan(
+    command_request: TCSpotRuntimeRequest,
+    resolved_symbol: ResolvedSymbol,
+) -> NativeRequestPlan:
+    timeframe = command_request.optional_drilldown_tf
+    if timeframe is None:
+        raise ValueError("selected profile has no optional drilldown timeframe")
+
+    return NativeRequestPlan(
+        timeframe=timeframe,
+        exchange=resolved_symbol.provider,
+        symbol=resolved_symbol.provider_symbol,
+        interval=_INTERVALS[timeframe],
+        execution_order=len(command_request.initial_timeframes) + 1,
+        role="CONFIRMATION",
     )

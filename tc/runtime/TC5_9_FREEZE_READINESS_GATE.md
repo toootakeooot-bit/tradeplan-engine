@@ -1,8 +1,8 @@
 # TC5-9 — Runtime Freeze Readiness Gate
 
-Status: **NOT READY FOR PRODUCTION FREEZE / CHATGPT-SIDE RUNTIME CORE COMPLETE ENOUGH FOR HOST BINDING**
+Status: **NOT READY FOR PRODUCTION FREEZE / REPOSITORY RUNTIME + HOST BINDING CONTRACT + RECORDED LIVE REPLAY PASSED**
 
-TC5-9 must not declare TC Spot Runtime production-ready merely because repository regression and ChatGPT-side Native calls pass.
+TC5-9 must not declare TC Spot Runtime production-ready merely because repository regression, ChatGPT-side Native calls, and recorded-live replay pass.
 
 ## Freeze prerequisites
 
@@ -41,9 +41,20 @@ NORMAL: D1 -> H4 -> H1   = LIVE CALLS COMPLETED
 SHORT : H4 -> H1 -> M15  = LIVE CALLS COMPLETED
 ```
 
-Observed NORMAL H1 evidence explicitly supported WAIT semantics. Observed SHORT M15 evidence explicitly supported provisional ACTIONABLE semantics. ACTIONABLE remains distinct from execution permission.
+A fresh NORMAL sequence captured at 2026-09-13 05:44-05:45Z was stored as:
 
-These executions prove the ChatGPT-side Native request path and active profile interval availability. They do **not** yet prove that the repo-contained Orchestrator is directly bound to the external connector in one automatic live run.
+```text
+fixtures/tc5_live/TC5-LIVE-NORMAL-GOLD-20260913-0544Z.json
+```
+
+The H1 Native record in that run contained a LONG candidate plan but neither explicit current-entry wording nor explicit WAIT wording. Under frozen TC4 semantics this is correctly treated as:
+
+```text
+trade_state = UNDETERMINED
+runtime_status = HOLD
+common status = not emitted
+execution_permission = false
+```
 
 ### Repository runtime implementation
 
@@ -56,9 +67,58 @@ tc/normalizer/normalizer.py       conservative mapping/state semantics
 tc/runtime/orchestrator.py        NORMAL/SHORT + conditional drilldown flow
 tc/runtime/raw_sink.py            immutable file Raw persistence sink
 tc/runtime/response.py            provisional common TradePlanState builder
+tc/runtime/host_binding.py        generic callable host binding
+tc/runtime/service.py             one-line TC Spot service entrypoint
 ```
 
-The Orchestrator requires a host-supplied Native Client implementation. `FileRawSink` is available for stable Raw persistence and refuses overwrite of existing artifacts.
+`run_spot_command()` now owns the repository-side path:
+
+```text
+command text
+-> Command Parser
+-> Symbol Resolver
+-> Profile Planner
+-> Runtime Orchestrator
+-> host-supplied Native Client
+-> immutable Raw persistence
+-> TCTradePlanRaw Adapter
+-> Normalizer
+-> Role Aggregation
+-> provisional TradePlanState
+```
+
+The external Host only needs to provide a Native call compatible with:
+
+```text
+request_analysis(exchange=..., symbol=..., interval=...)
+```
+
+No strategy logic is delegated to the Host binding.
+
+### Recorded-live replay E2E
+
+The fresh live GOLD NORMAL Native sequence was replayed through the actual repository service using the generic host binding and immutable FileRawSink.
+
+Verified path:
+
+```text
+recorded live Native responses
+-> CallableNativeClient
+-> run_spot_command
+-> FileRawSink
+-> Adapter
+-> Normalizer
+-> Role Aggregation
+-> TradePlanState
+```
+
+Result:
+
+```text
+RECORDED_LIVE_NATIVE_RAW_TO_TRADEPLANSTATE_E2E = PASSED
+```
+
+This proves that actual Native response shapes observed from the connected TradingCursor tool traverse the repository runtime correctly. It is still not the same as an automatic direct connector-to-repository live call in one process.
 
 ### Regression
 
@@ -67,55 +127,63 @@ GitHub Actions workflow `TC5 Runtime Regression` covers:
 - TC4 TCREG regression;
 - TC5 profile aggregation regression;
 - TC5 static pipeline regression;
-- TC5 runtime core regression, including Raw persistence and symbol registry tests.
+- TC5 runtime core regression;
+- host binding tests;
+- immutable Raw persistence tests;
+- four-family symbol/provider registry tests;
+- one-line service entrypoint test;
+- recorded-live Native replay test.
 
 Verified successful runs include:
 
 ```text
 run 2   head e510d3f0edbdb3757be2db0ad358ff154deecb62  PASS
 run 12  head ebb76694c8766252299746743106c4bf14bc75df  PASS
+run 19  head 5a582fe1a75f90391adf39119d43a3d62fa8ef7e  PASS
 ```
 
 ## Current gates
 
 ```text
-CHATGPT_NATIVE_NORMAL_SEQUENCE          = PASSED
-CHATGPT_NATIVE_SHORT_SEQUENCE           = PASSED
-CHATGPT_M15_ACCESS                      = PASSED
-VALIDATED_SYMBOL_PROVIDER_REGISTRY      = PASSED (4 operational families)
-REPO_NATIVE_CLIENT_INTERFACE            = IMPLEMENTED
-REPO_ADAPTER                            = IMPLEMENTED
-REPO_NORMALIZER                         = IMPLEMENTED
-REPO_RUNTIME_ORCHESTRATOR               = IMPLEMENTED
-REPO_RAW_PERSISTENCE_SINK               = IMPLEMENTED
-REPO_COMMON_RESPONSE_BUILDER            = IMPLEMENTED
-TC4_AND_TC5_REGRESSION_CI               = PASSED
+CHATGPT_NATIVE_NORMAL_SEQUENCE                 = PASSED
+CHATGPT_NATIVE_SHORT_SEQUENCE                  = PASSED
+CHATGPT_M15_ACCESS                             = PASSED
+VALIDATED_SYMBOL_PROVIDER_REGISTRY             = PASSED (4 operational families)
+REPO_NATIVE_CLIENT_INTERFACE                   = IMPLEMENTED
+REPO_CALLABLE_HOST_BINDING                     = IMPLEMENTED
+REPO_ONE_LINE_SPOT_SERVICE                     = IMPLEMENTED
+REPO_ADAPTER                                   = IMPLEMENTED
+REPO_NORMALIZER                                = IMPLEMENTED
+REPO_RUNTIME_ORCHESTRATOR                      = IMPLEMENTED
+REPO_RAW_PERSISTENCE_SINK                      = IMPLEMENTED
+REPO_COMMON_RESPONSE_BUILDER                   = IMPLEMENTED
+RECORDED_LIVE_NATIVE_RAW_TO_TRADEPLANSTATE_E2E = PASSED
+TC4_AND_TC5_REGRESSION_CI                      = PASSED
 
-LIVE_NORMAL_DRILLDOWN_TRIGGER_CASE      = NOT_OBSERVED
-LIVE_CONNECTOR_TO_REPO_CLIENT_BINDING   = NOT_IMPLEMENTED
-FULL_LIVE_RAW->ADAPTER->NORMALIZER_E2E  = NOT_PASSED
-COMMON_TRADEPLANSTATE_FINAL_SCHEMA      = PROVISIONAL
+LIVE_NORMAL_DRILLDOWN_TRIGGER_CASE             = NOT_OBSERVED
+AUTOMATIC_LIVE_CONNECTOR_TO_REPO_BINDING       = NOT_IMPLEMENTED
+FULL_AUTOMATIC_LIVE_CONNECTOR_E2E              = NOT_PASSED
+COMMON_TRADEPLANSTATE_FINAL_SCHEMA             = PROVISIONAL
 ```
 
-## Clarification of E2E terminology
+## Connector boundary
 
-A ChatGPT-side sequence of successful Native calls is not labeled a full production E2E unless the same execution is automatically passed through:
+The remaining connector gap is deployment/host integration, not strategy design.
+
+The repository intentionally does not import or impersonate a ChatGPT-internal connector SDK. Production qualification requires a Host that can bind the real TradingCursor call to `CallableNativeClient` (or another `TradingCursorNativeClient` implementation) and invoke `run_spot_command()` in the same live execution.
+
+Until that Host integration exists, distinguish:
 
 ```text
-Command
--> Symbol Resolver
--> Runtime Orchestrator
--> concrete Native Client binding
--> Raw persistence
--> Adapter
--> Normalizer
--> Role Aggregation
--> TradePlanState response
+ChatGPT connected tool live call                    = available
+repository runtime service                          = available
+recorded live response through repository service   = passed
+automatic live connector -> repository service       = not yet bound
 ```
 
 ## Allowed current claim
 
-> TC Spot now has a CI-tested repository runtime core, stable Raw persistence implementation, four validated operational symbol/provider mappings, and separately proven ChatGPT-side TradingCursor Native sequences for NORMAL and SHORT. The main remaining production gap is the concrete external connector/client binding, followed by one full live Raw-to-TradePlanState E2E and one naturally/explicitly triggered NORMAL drilldown case.
+> TC Spot has a CI-tested repository runtime, immutable Raw persistence, validated mappings for four operational symbol families, a generic Host binding contract, a one-line service entrypoint, proven ChatGPT-side TradingCursor live access, and a recorded-live Native-to-TradePlanState replay E2E. The remaining production gap is the automatic live connector-to-repository Host binding plus one live NORMAL drilldown trigger case.
 
 ## Prohibited claim
 
@@ -125,7 +193,7 @@ Do not state:
 TC Spot Runtime production ready
 TC5 production frozen
 fully automatic repo-hosted tc spot operational
-full live Raw-to-TradePlanState E2E passed
+full automatic live connector E2E passed
 ```
 
 until the remaining gates are actually passed.

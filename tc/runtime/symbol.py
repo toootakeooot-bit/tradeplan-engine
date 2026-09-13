@@ -22,9 +22,13 @@ class ResolvedSymbol:
     provider_map_rule: str
 
 
+# GOLD user-facing aliases are normalized to one logical instrument.
+# TradingCursor analysis for this family is intentionally centralized on
+# the validated provider mapping OANDA / XAUUSD.
 _CANONICAL = {
-    "GOLD": ("GOLD", "GOLD_ALIAS_V1"),
-    "XAU/USD": ("GOLD", "GOLD_ALIAS_V1"),
+    "GOLD": ("GOLD", "GOLD_ALIAS_V2"),
+    "XAUUSD": ("GOLD", "GOLD_ALIAS_V2"),
+    "XAU/USD": ("GOLD", "GOLD_ALIAS_V2"),
     "USDJPY": ("USDJPY", "USDJPY_IDENTITY_V1"),
 }
 

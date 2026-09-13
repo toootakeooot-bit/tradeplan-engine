@@ -6,74 +6,42 @@ This amendment extends the TC5-0 baseline without changing TC4.
 
 ## GOLD
 
-All of the following are accepted as the same logical TC Spot instrument:
-
 ```text
-GOLD
-GOLD#
-XAUUSD
-XAU/USD
-```
-
-Canonical:
-
-```text
-GOLD
-```
-
-Validated TradingCursor analysis target:
-
-```text
-OANDA / XAUUSD
+GOLD / GOLD# / XAUUSD / XAU/USD
+-> canonical GOLD
+-> OANDA / XAUUSD
 ```
 
 ## USDJPY
 
-Accepted:
-
 ```text
-USDJPY
-USDJPY#
-```
-
-Canonical:
-
-```text
-USDJPY
-```
-
-Validated TradingCursor analysis target:
-
-```text
-OANDA / USDJPY
+USDJPY / USDJPY#
+-> canonical USDJPY
+-> OANDA / USDJPY
 ```
 
 ## US100
 
-Accepted:
-
 ```text
-US100Cash
-US100Cash#
-NAS100
+US100Cash / US100Cash# / NAS100
+-> canonical US100
+-> PEPPERSTONE / NAS100
 ```
 
-Canonical:
+## JP225
 
 ```text
-US100
+JP225Cash / JP225Cash# / JPN225
+-> canonical JP225
+-> PEPPERSTONE / JPN225
 ```
 
-Validated TradingCursor analysis target:
-
-```text
-PEPPERSTONE / NAS100
-```
+`PEPPERSTONE / JPN225 / 4h` completed successfully through TradingCursor on 2026-09-13.
 
 ## Suffix rule
 
 Terminal `#` remains a broker suffix handled before alias/canonical resolution.
 
-## JP225
+## Boundary
 
-`JP225Cash` / `JP225Cash#` remains unresolved until an exact provider/symbol Native call succeeds.
+These mappings belong to TC5 Runtime. The frozen TC4 Adapter still receives exact provider/source and provider symbol and performs no silent symbol conversion.

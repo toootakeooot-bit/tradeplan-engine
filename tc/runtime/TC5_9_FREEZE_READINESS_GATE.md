@@ -1,199 +1,223 @@
 # TC5-9 — Runtime Freeze Readiness Gate
 
-Status: **NOT READY FOR PRODUCTION FREEZE / REPOSITORY RUNTIME + HOST BINDING CONTRACT + RECORDED LIVE REPLAY PASSED**
+Status: **FROZEN — TC SPOT v1 CHATGPT ON-DEMAND OPERATIONAL BASELINE**
 
-TC5-9 must not declare TC Spot Runtime production-ready merely because repository regression, ChatGPT-side Native calls, and recorded-live replay pass.
+Freeze date: 2026-09-13
 
-## Freeze prerequisites
+This Freeze is intentionally limited to user-triggered TC Spot operation in ChatGPT.
 
-All of the following are required before a production TC5 runtime freeze:
+It does **not** claim autonomous/background/repo-hosted connector operation.
 
-1. one coherent current NORMAL run completes through D1/H4/H1 using the intended runtime path;
-2. one coherent current SHORT run completes through H4/H1/M15 using the intended runtime path;
-3. one NORMAL drilldown case is verified where explicit H1 lower-timeframe confirmation evidence causes an M15 request and the result is handled by TC5-7 policy;
-4. each Native call remains traceable to run/profile/role/timeframe identity;
-5. no interval substitution occurs;
-6. Raw/Adapter handling is connected to the actual live Native call path with stable persistence;
-7. runtime/infrastructure failures remain separate from TradePlanState;
-8. symbol normalization/provider mapping provenance is retained;
-9. TC4 regression guardrails remain intact;
-10. NODA remains separated;
-11. execution permission remains outside TC Spot;
-12. common output remains compatible with the provisional TradePlanState direction without finalizing Common solely around TC.
+## 1. Frozen operational scope
 
-## Current verified progress
-
-### ChatGPT Native capability
-
-Verified on 2026-09-13 through the connected TradingCursor tool:
+Supported host mode:
 
 ```text
-GOLD family   -> OANDA / XAUUSD
-USDJPY family -> OANDA / USDJPY
-US100 family  -> PEPPERSTONE / NAS100
-JP225 family  -> PEPPERSTONE / JPN225
+User explicitly requests TC Spot in ChatGPT
+-> ChatGPT Host invokes TradingCursor Native
+-> TC4 frozen semantics + TC5 runtime policy are applied
+-> user receives TC Spot result
 ```
 
-Profile calls verified for GOLD:
+Examples:
 
 ```text
-NORMAL: D1 -> H4 -> H1   = LIVE CALLS COMPLETED
-SHORT : H4 -> H1 -> M15  = LIVE CALLS COMPLETED
+tc スポット GOLD# エントリー前
+tc スポット GOLD# 短期 エントリー前
 ```
 
-A fresh NORMAL sequence captured at 2026-09-13 05:44-05:45Z was stored as:
+Out of scope:
+
+- scheduled/background execution;
+- autonomous monitoring;
+- operation without an explicit user request;
+- direct order execution;
+- autonomous repo-hosted TradingCursor connector.
+
+## 2. Profile contract
+
+NORMAL:
 
 ```text
-fixtures/tc5_live/TC5-LIVE-NORMAL-GOLD-20260913-0544Z.json
+D1 -> Environment
+H4 -> Setup
+H1 -> Decision
+M15 -> only if H1 explicitly requires lower-timeframe confirmation
 ```
 
-The H1 Native record in that run contained a LONG candidate plan but neither explicit current-entry wording nor explicit WAIT wording. Under frozen TC4 semantics this is correctly treated as:
+SHORT:
 
 ```text
-trade_state = UNDETERMINED
-runtime_status = HOLD
-common status = not emitted
-execution_permission = false
+H4 -> Environment
+H1 -> Setup
+M15 -> Decision
 ```
 
-### Repository runtime implementation
+One Native call remains one timeframe. No interval substitution is allowed.
 
-Implemented:
+## 3. Validated symbol/provider registry
 
 ```text
-tc/adapter/native_client.py       Native Client host interface
-tc/adapter/adapter.py             Raw-preserving TCTradePlanRaw wrapper
-tc/normalizer/normalizer.py       conservative mapping/state semantics
-tc/runtime/orchestrator.py        NORMAL/SHORT + conditional drilldown flow
-tc/runtime/raw_sink.py            immutable file Raw persistence sink
-tc/runtime/response.py            provisional common TradePlanState builder
-tc/runtime/host_binding.py        generic callable host binding
-tc/runtime/service.py             one-line TC Spot service entrypoint
+GOLD / GOLD# / XAUUSD / XAU/USD -> OANDA / XAUUSD
+USDJPY / USDJPY#                 -> OANDA / USDJPY
+US100Cash / US100Cash# / NAS100 -> PEPPERSTONE / NAS100
+JP225Cash / JP225Cash# / JPN225 -> PEPPERSTONE / JPN225
 ```
 
-`run_spot_command()` now owns the repository-side path:
+Original user/broker symbol remains traceable. Terminal `#` remains broker suffix normalization before canonical resolution.
+
+## 4. Repository runtime baseline
+
+Implemented and regression-covered:
 
 ```text
-command text
--> Command Parser
+tc/adapter/native_client.py
+tc/adapter/adapter.py
+tc/normalizer/normalizer.py
+tc/runtime/command.py
+tc/runtime/symbol.py
+tc/runtime/planner.py
+tc/runtime/orchestrator.py
+tc/runtime/raw_sink.py
+tc/runtime/host_binding.py
+tc/runtime/service.py
+tc/runtime/response.py
+tc/runtime/aggregate.py
+```
+
+Reference repository path:
+
+```text
+Command
 -> Symbol Resolver
--> Profile Planner
--> Runtime Orchestrator
--> host-supplied Native Client
--> immutable Raw persistence
--> TCTradePlanRaw Adapter
--> Normalizer
--> Role Aggregation
--> provisional TradePlanState
-```
-
-The external Host only needs to provide a Native call compatible with:
-
-```text
-request_analysis(exchange=..., symbol=..., interval=...)
-```
-
-No strategy logic is delegated to the Host binding.
-
-### Recorded-live replay E2E
-
-The fresh live GOLD NORMAL Native sequence was replayed through the actual repository service using the generic host binding and immutable FileRawSink.
-
-Verified path:
-
-```text
-recorded live Native responses
--> CallableNativeClient
--> run_spot_command
--> FileRawSink
+-> Planner
+-> Orchestrator
+-> Native Client
+-> Raw persistence
 -> Adapter
 -> Normalizer
 -> Role Aggregation
 -> TradePlanState
 ```
 
-Result:
+## 5. Fresh Live qualification
+
+TC5-10 audit passed using fresh GOLD runs on 2026-09-13.
+
+NORMAL Live:
 
 ```text
-RECORDED_LIVE_NATIVE_RAW_TO_TRADEPLANSTATE_E2E = PASSED
+D1  -> OANDA/XAUUSD -> completed
+H4  -> OANDA/XAUUSD -> completed
+H1  -> OANDA/XAUUSD -> completed
 ```
 
-This proves that actual Native response shapes observed from the connected TradingCursor tool traverse the repository runtime correctly. It is still not the same as an automatic direct connector-to-repository live call in one process.
+Captured:
 
-### Regression
+```text
+fixtures/tc5_live/TC5-LIVE-NORMAL-GOLD-20260913-0553Z.json
+```
 
-GitHub Actions workflow `TC5 Runtime Regression` covers:
+Recorded-live replay through the repository Runtime: **PASS**.
+
+SHORT Live:
+
+```text
+H4  -> OANDA/XAUUSD -> completed
+H1  -> OANDA/XAUUSD -> completed
+M15 -> OANDA/XAUUSD -> completed
+```
+
+Captured:
+
+```text
+fixtures/tc5_live/TC5-LIVE-SHORT-GOLD-20260913-0554Z.json
+```
+
+Recorded-live replay through the repository Runtime: **PASS**.
+
+## 6. State semantics retained
+
+```text
+ACTIONABLE   -> TRADE
+WAIT         -> WAIT
+INVALID      -> INVALID
+UNDETERMINED -> HOLD / 判定保留
+```
+
+`TRADE` / `ACTIONABLE` never means execution permission.
+
+Environment and Setup remain role evidence. TC5-9 does not add majority voting or an Environment/Setup alignment gate.
+
+## 7. Regression qualification
+
+GitHub Actions run 25 on head:
+
+```text
+a149c98f248d677cbc6efd0bd45a674f2b0e193a
+```
+
+completed successfully.
+
+Verified regression scope includes:
 
 - TC4 TCREG regression;
-- TC5 profile aggregation regression;
-- TC5 static pipeline regression;
-- TC5 runtime core regression;
-- host binding tests;
-- immutable Raw persistence tests;
-- four-family symbol/provider registry tests;
-- one-line service entrypoint test;
-- recorded-live Native replay test.
+- TC5 Profile aggregation;
+- TC5 static pipeline;
+- TC5 runtime core;
+- Host binding;
+- immutable Raw persistence;
+- validated symbol registry;
+- one-line service entrypoint;
+- fresh NORMAL recorded-live replay;
+- fresh SHORT recorded-live replay.
 
-Verified successful runs include:
-
-```text
-run 2   head e510d3f0edbdb3757be2db0ad358ff154deecb62  PASS
-run 12  head ebb76694c8766252299746743106c4bf14bc75df  PASS
-run 19  head 5a582fe1a75f90391adf39119d43a3d62fa8ef7e  PASS
-```
-
-## Current gates
+## 8. Hard Gate result
 
 ```text
-CHATGPT_NATIVE_NORMAL_SEQUENCE                 = PASSED
-CHATGPT_NATIVE_SHORT_SEQUENCE                  = PASSED
-CHATGPT_M15_ACCESS                             = PASSED
-VALIDATED_SYMBOL_PROVIDER_REGISTRY             = PASSED (4 operational families)
-REPO_NATIVE_CLIENT_INTERFACE                   = IMPLEMENTED
-REPO_CALLABLE_HOST_BINDING                     = IMPLEMENTED
-REPO_ONE_LINE_SPOT_SERVICE                     = IMPLEMENTED
-REPO_ADAPTER                                   = IMPLEMENTED
-REPO_NORMALIZER                                = IMPLEMENTED
-REPO_RUNTIME_ORCHESTRATOR                      = IMPLEMENTED
-REPO_RAW_PERSISTENCE_SINK                      = IMPLEMENTED
-REPO_COMMON_RESPONSE_BUILDER                   = IMPLEMENTED
-RECORDED_LIVE_NATIVE_RAW_TO_TRADEPLANSTATE_E2E = PASSED
-TC4_AND_TC5_REGRESSION_CI                      = PASSED
-
-LIVE_NORMAL_DRILLDOWN_TRIGGER_CASE             = NOT_OBSERVED
-AUTOMATIC_LIVE_CONNECTOR_TO_REPO_BINDING       = NOT_IMPLEMENTED
-FULL_AUTOMATIC_LIVE_CONNECTOR_E2E              = NOT_PASSED
-COMMON_TRADEPLANSTATE_FINAL_SCHEMA             = PROVISIONAL
+TC4-9 Freeze unchanged                         = PASS
+NODA contamination                             = PASS / NONE
+NORMAL Live sequence                           = PASS
+SHORT Live sequence                            = PASS
+M15 Native access                              = PASS
+Fresh NORMAL Raw-to-TradePlanState replay      = PASS
+Fresh SHORT Raw-to-TradePlanState replay       = PASS
+TC4 + TC5 regression CI                        = PASS
+Runtime failure != Trade State                 = PASS
+Execution permission outside TC Spot           = PASS
+User-triggered-only Host scope                  = PASS
 ```
 
-## Connector boundary
+## 9. Non-blocking follow-up observations
 
-The remaining connector gap is deployment/host integration, not strategy design.
+### NORMAL live drilldown case
 
-The repository intentionally does not import or impersonate a ChatGPT-internal connector SDK. Production qualification requires a Host that can bind the real TradingCursor call to `CallableNativeClient` (or another `TradingCursorNativeClient` implementation) and invoke `run_spot_command()` in the same live execution.
+A naturally occurring H1 Native response explicitly requesting lower-timeframe confirmation has not yet been observed live.
 
-Until that Host integration exists, distinguish:
+This is **not a Freeze blocker** for ChatGPT On-Demand v1 because:
+
+- the branch is deterministic-regression tested;
+- M15 Native access is proven;
+- TC5-7 already fixes the exact trigger and release/HOLD behavior.
+
+When such a case naturally appears during future spot use, record it as an operational regression fixture.
+
+### Common TradePlanState
+
+The TC-facing common output remains compatible with the provisional TradePlanState direction. Final cross-engine Common schema may later be fixed together with NODA without reopening TC Engine v1 semantics.
+
+## 10. Explicit non-claims
+
+This Freeze does **not** mean:
 
 ```text
-ChatGPT connected tool live call                    = available
-repository runtime service                          = available
-recorded live response through repository service   = passed
-automatic live connector -> repository service       = not yet bound
+background TC monitoring is enabled
+autonomous scheduled TC Spot is enabled
+repo Python directly imports a ChatGPT-internal TradingCursor SDK
+automatic trade execution is permitted
+Common schema is permanently frozen for every future engine
 ```
 
-## Allowed current claim
+## 11. Freeze conclusion
 
-> TC Spot has a CI-tested repository runtime, immutable Raw persistence, validated mappings for four operational symbol families, a generic Host binding contract, a one-line service entrypoint, proven ChatGPT-side TradingCursor live access, and a recorded-live Native-to-TradePlanState replay E2E. The remaining production gap is the automatic live connector-to-repository Host binding plus one live NORMAL drilldown trigger case.
-
-## Prohibited claim
-
-Do not state:
-
-```text
-TC Spot Runtime production ready
-TC5 production frozen
-fully automatic repo-hosted tc spot operational
-full automatic live connector E2E passed
-```
-
-until the remaining gates are actually passed.
+> TC Spot v1 is operationally frozen for explicit user-triggered use in ChatGPT. NORMAL and SHORT Live Native sequences and fresh recorded-live repository replays have passed. The user may invoke TC Spot on demand without MT4 screenshots. Autonomous/background connector operation remains outside this baseline.

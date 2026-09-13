@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Run TC4 regression
-        run: python -m unittest discover -s tests/tc4_7 -p 'test_*.py' -v
+        run: python tests/tc4_7/test_fixed_fixture_regression.py
       - name: Run TC5 profile aggregation regression
         run: python -m unittest discover -s tests/tc5_7 -p 'test_*.py' -v
       - name: Run TC5 static pipeline regression

@@ -34,6 +34,31 @@ ChatGPT is the operational Host. On an explicit TC Spot command it must:
 
 ChatGPT must not inject web analysis, NODA rules, independent technical judgment, or a substitute interval into TC Spot.
 
+### 2.1 Mandatory Native-first execution guard
+
+For every accepted `tc スポット ... エントリー前` command, the Host **MUST attempt the TradingCursor Native call sequence before declaring Market Input unavailable**.
+
+The following shortcut is prohibited:
+
+```text
+no uploaded chart / no pre-supplied Market Input
+-> MARKET_INPUT_MISSING
+-> NO DECISION
+```
+
+Absence of a user-uploaded chart or pre-supplied Market Input is **not** an input failure. TradingCursor Native is the live Market Input source for TC Spot Host mode.
+
+A Market Input / provider failure may be reported only after an actual required Native call has been attempted and that call has returned an error, invalid response, or unavailable result.
+
+When a required Native call fails:
+
+- classify it as a runtime/provider failure, outside Trade State;
+- do not fabricate `WAIT`, `INVALID`, or `UNDETERMINED` from missing data;
+- do not substitute web prices, web technical analysis, NODA analysis, uploaded charts, or another interval;
+- report the failed provider/symbol/interval and stop the affected TC Spot run.
+
+This guard is fail-closed: **Native call first; provider/runtime error only after observed failure; no substitute analysis.**
+
 ## 3. Profile call contract
 
 NORMAL:
@@ -54,6 +79,8 @@ M15 -> Decision
 ```
 
 One Native call remains one timeframe.
+
+For NORMAL, M15 is conditional and its absence is not Market Input missing unless H1 explicitly requires lower-timeframe confirmation and the required M15 Native call then fails.
 
 ## 4. Repository runtime equivalence
 
@@ -100,6 +127,8 @@ ACTIONABLE / TRADE never grants execution permission.
 
 Environment and Setup are retained as role evidence. TC5-10 does not add a new alignment/voting gate.
 
+Runtime/provider failure is not a Trade State and must not be converted into WAIT/HOLD/INVALID merely because Market Input is absent.
+
 ## 7. Freeze qualification for this host mode
 
 ChatGPT On-Demand Host mode may be frozen when all are true:
@@ -116,6 +145,30 @@ ChatGPT On-Demand Host mode may be frozen when all are true:
 
 A naturally occurring NORMAL drilldown Live example is an operational follow-up test, not a blocker for initial on-demand Freeze, because the branch path is already covered by deterministic regression.
 
-## 8. Explicit limitation
+## 8. Host regression invariant
+
+The following command is a mandatory regression case:
+
+```text
+tc スポット GOLD# エントリー前
+```
+
+Expected Host behavior:
+
+```text
+GOLD#
+-> OANDA / XAUUSD
+-> Native 1D
+-> Native 4h
+-> Native 1h
+-> Native 15m only if H1 explicitly requires drilldown
+-> TC4/TC5 mapping and TradePlanState
+```
+
+The run must never stop merely because the user supplied no chart or no separate prepared Market Input.
+
+Equivalent aliases (`GOLD`, `GOLD#`, `XAUUSD`, `XAU/USD`) must enter the same provider route. `USDJPY` and `USDJPY#` must likewise enter the same provider route.
+
+## 9. Explicit limitation
 
 This Freeze does **not** claim an autonomous repo-hosted TradingCursor connector. It qualifies only the user-triggered ChatGPT Host workflow.

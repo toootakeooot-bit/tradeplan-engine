@@ -5,10 +5,11 @@ from tc.adapter.adapter import AdapterRequest, adapt_native_response
 from tc.normalizer.normalizer import normalize_tc_raw
 from tc.runtime.command import parse_spot_command
 from tc.runtime.orchestrator import run_spot_entry_pre
+from tc.runtime.response import build_tradeplan_state
 from tc.runtime.symbol import resolve_symbol
 
 
-def native_response(interval, observations, position=None, trend="neutral"):
+def native_response(interval, observations, position=None, trend="neutral", exchange="OANDA", symbol="XAUUSD"):
     analysis = {
         "futureAssumption": {"trend": trend},
         "observations": observations,
@@ -18,8 +19,8 @@ def native_response(interval, observations, position=None, trend="neutral"):
         analysis["potentialPosition"] = position
     return {
         "status": "completed",
-        "exchange": "OANDA",
-        "symbol": "XAUUSD",
+        "exchange": exchange,
+        "symbol": symbol,
         "interval": interval,
         "analysis": json.dumps(analysis),
         "model": "test-model",
@@ -104,9 +105,10 @@ class OrchestratorTests(unittest.TestCase):
         client = FakeClient(responses)
         sink = FakeSink()
         command = parse_spot_command("tc スポット GOLD# エントリー前")
+        resolved = resolve_symbol(command.user_symbol)
         result = run_spot_entry_pre(
             command_request=command,
-            resolved_symbol=resolve_symbol(command.user_symbol),
+            resolved_symbol=resolved,
             client=client,
             raw_sink=sink,
             source_run_id="normal-1",
@@ -115,6 +117,17 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(result.aggregate.decision_timeframe, "H1")
         self.assertEqual([call[2] for call in client.calls], ["1D", "4h", "1h"])
         self.assertEqual(len(sink.saved), 3)
+
+        state = build_tradeplan_state(
+            aggregate=result.aggregate,
+            normalized_records=result.normalized_records,
+            resolved_symbol=resolved,
+            timestamp="2026-09-13T00:00:00Z",
+        )
+        self.assertEqual(state["status"], "WAIT")
+        self.assertEqual(state["source_engine"], "TC")
+        self.assertEqual(state["evidence"]["provider"], "OANDA")
+        self.assertFalse(state["execution_permission"])
 
     def test_short_run_uses_h4_h1_m15_and_m15_decides(self):
         responses = {
@@ -173,6 +186,15 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(result.aggregate.common_status, "TRADE")
         self.assertEqual(result.aggregate.confirmation_timeframe, "M15")
         self.assertFalse(result.aggregate.execution_permission)
+
+    def test_us100_aliases_use_pepperstone_nas100(self):
+        a = resolve_symbol("US100Cash#")
+        b = resolve_symbol("NAS100")
+        self.assertEqual(a.canonical_symbol, "US100")
+        self.assertEqual(b.canonical_symbol, "US100")
+        self.assertEqual(a.provider, "PEPPERSTONE")
+        self.assertEqual(a.provider_symbol, "NAS100")
+        self.assertEqual((a.provider, a.provider_symbol), (b.provider, b.provider_symbol))
 
 
 if __name__ == "__main__":

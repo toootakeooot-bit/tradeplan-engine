@@ -22,23 +22,25 @@ class ResolvedSymbol:
     provider_map_rule: str
 
 
-# GOLD user-facing aliases are normalized to one logical instrument.
-# TradingCursor analysis for this family is intentionally centralized on
-# the validated provider mapping OANDA / XAUUSD.
+# User-facing aliases are normalized to one logical instrument.
 _CANONICAL = {
     "GOLD": ("GOLD", "GOLD_ALIAS_V2"),
     "XAUUSD": ("GOLD", "GOLD_ALIAS_V2"),
     "XAU/USD": ("GOLD", "GOLD_ALIAS_V2"),
     "USDJPY": ("USDJPY", "USDJPY_IDENTITY_V1"),
+    "US100Cash": ("US100", "US100_ALIAS_V1"),
+    "NAS100": ("US100", "US100_ALIAS_V1"),
 }
 
-_OANDA = {
-    "GOLD": "XAUUSD",
-    "USDJPY": "USDJPY",
+# Validated analysis-provider registry.
+_PROVIDER_DEFAULTS = {
+    "GOLD": ("OANDA", "XAUUSD", "TC5_OANDA_PROVIDER_MAP_V2"),
+    "USDJPY": ("OANDA", "USDJPY", "TC5_OANDA_PROVIDER_MAP_V2"),
+    "US100": ("PEPPERSTONE", "NAS100", "TC5_PEPPERSTONE_PROVIDER_MAP_V1"),
 }
 
 
-def resolve_symbol(user_symbol: str, provider: str = "OANDA") -> ResolvedSymbol:
+def resolve_symbol(user_symbol: str, provider: str | None = None) -> ResolvedSymbol:
     if not isinstance(user_symbol, str) or not user_symbol:
         raise SymbolResolutionError("SYMBOL_FORMAT_INVALID", "symbol must be a non-empty string")
 
@@ -57,23 +59,29 @@ def resolve_symbol(user_symbol: str, provider: str = "OANDA") -> ResolvedSymbol:
         raise SymbolResolutionError("SYMBOL_UNRESOLVED", f"no canonical mapping for {normalized}")
     canonical_symbol, alias_rule = canonical_entry
 
-    if provider != "OANDA":
-        raise SymbolResolutionError("PROVIDER_UNSUPPORTED", f"unsupported provider: {provider}")
-    provider_symbol = _OANDA.get(canonical_symbol)
-    if provider_symbol is None:
+    provider_entry = _PROVIDER_DEFAULTS.get(canonical_symbol)
+    if provider_entry is None:
         raise SymbolResolutionError(
             "PROVIDER_MAPPING_UNRESOLVED",
-            f"no validated OANDA mapping for {canonical_symbol}",
+            f"no validated provider mapping for {canonical_symbol}",
+        )
+
+    default_provider, provider_symbol, provider_map_rule = provider_entry
+    selected_provider = provider or default_provider
+    if selected_provider != default_provider:
+        raise SymbolResolutionError(
+            "PROVIDER_UNSUPPORTED",
+            f"validated provider for {canonical_symbol} is {default_provider}, got {selected_provider}",
         )
 
     return ResolvedSymbol(
         user_symbol=user_symbol,
         normalized_symbol=normalized,
         canonical_symbol=canonical_symbol,
-        provider=provider,
+        provider=selected_provider,
         provider_symbol=provider_symbol,
         broker_suffix=broker_suffix,
         normalization_rule=normalization_rule,
         alias_rule=alias_rule,
-        provider_map_rule="TC5_OANDA_PROVIDER_MAP_V1",
+        provider_map_rule=provider_map_rule,
     )

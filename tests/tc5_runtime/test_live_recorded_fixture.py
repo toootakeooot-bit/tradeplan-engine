@@ -8,7 +8,7 @@ from tc.runtime.raw_sink import FileRawSink
 from tc.runtime.service import run_spot_command
 
 
-NORMAL_FIXTURE = Path("fixtures/tc5_live/TC5-LIVE-NORMAL-GOLD-20260913-0544Z.json")
+NORMAL_FIXTURE = Path("fixtures/tc5_live/TC5-LIVE-NORMAL-GOLD-20260913-0553Z.json")
 SHORT_FIXTURE = Path("fixtures/tc5_live/TC5-LIVE-SHORT-GOLD-20260913-0554Z.json")
 
 
@@ -39,12 +39,12 @@ class LiveRecordedFixtureTests(unittest.TestCase):
                     ("OANDA", "XAUUSD", "1h"),
                 ],
             )
-            self.assertEqual(result.run_result.aggregate.runtime_status, "HOLD")
-            self.assertIsNone(result.run_result.aggregate.common_status)
+            self.assertEqual(result.run_result.aggregate.runtime_status, "FINALIZED")
+            self.assertEqual(result.run_result.aggregate.common_status, "TRADE")
             self.assertEqual(result.run_result.aggregate.direction, "LONG")
-            self.assertIsNone(result.tradeplan_state["status"])
+            self.assertEqual(result.tradeplan_state["status"], "TRADE")
             self.assertEqual(result.tradeplan_state["direction"], "LONG")
-            self.assertEqual(result.tradeplan_state["evidence"]["decision_trade_state"], "UNDETERMINED")
+            self.assertEqual(result.tradeplan_state["evidence"]["decision_trade_state"], "ACTIONABLE")
             self.assertFalse(result.tradeplan_state["execution_permission"])
             self.assertEqual(len(list(Path(tmp).rglob("*_native.json"))), 3)
 

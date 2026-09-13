@@ -1,0 +1,24 @@
+name: TC5 Runtime Regression
+
+on:
+  push:
+    branches:
+      - feature/tc-v1
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run TC4 regression
+        run: python -m unittest discover -s tests/tc4_7 -p 'test_*.py' -v
+      - name: Run TC5 profile aggregation regression
+        run: python -m unittest discover -s tests/tc5_7 -p 'test_*.py' -v
+      - name: Run TC5 static pipeline regression
+        run: python -m unittest discover -s tests/tc5_8 -p 'test_*.py' -v
+      - name: Run TC5 runtime core regression
+        run: python -m unittest discover -s tests/tc5_runtime -p 'test_*.py' -v

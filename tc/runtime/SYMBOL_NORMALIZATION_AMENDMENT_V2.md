@@ -23,10 +23,12 @@ USDJPY / USDJPY#
 ## US100
 
 ```text
-US100Cash / US100Cash# / NAS100
+US100 / US100Cash / US100Cash# / NAS100
 -> canonical US100
 -> PEPPERSTONE / NAS100
 ```
+
+`US100` is the canonical identity and is also accepted directly as a user-facing TC Spot symbol. All listed US100-family aliases enter the same provider route.
 
 ## JP225
 

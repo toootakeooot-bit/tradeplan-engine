@@ -18,9 +18,10 @@ class SymbolRegistryTests(unittest.TestCase):
 
     def test_us100_family(self):
         expected = ("US100", "PEPPERSTONE", "NAS100")
-        for symbol in ("US100Cash", "US100Cash#", "NAS100"):
+        for symbol in ("US100", "US100Cash", "US100Cash#", "NAS100"):
             resolved = resolve_symbol(symbol)
             self.assertEqual((resolved.canonical_symbol, resolved.provider, resolved.provider_symbol), expected)
+            self.assertEqual(resolved.alias_rule, "US100_ALIAS_V2")
 
     def test_jp225_family(self):
         expected = ("JP225", "PEPPERSTONE", "JPN225")

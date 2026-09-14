@@ -23,10 +23,12 @@ USDJPY / USDJPY#
 ## US100 family
 
 ```text
-US100Cash / US100Cash# / NAS100
+US100 / US100Cash / US100Cash# / NAS100
 -> canonical US100
 -> PEPPERSTONE / NAS100
 ```
+
+`US100` is accepted as the canonical identity and follows the same validated provider route as the existing aliases.
 
 `PEPPERSTONE / NAS100 / 4h` completed successfully through TradingCursor on 2026-09-13.
 

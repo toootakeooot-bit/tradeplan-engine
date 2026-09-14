@@ -104,11 +104,13 @@ The ChatGPT Host must preserve the same semantics even though the external Tradi
 ## 5. Operational symbol registry
 
 ```text
-GOLD / GOLD# / XAUUSD / XAU/USD -> OANDA / XAUUSD
-USDJPY / USDJPY#                 -> OANDA / USDJPY
-US100Cash / US100Cash# / NAS100 -> PEPPERSTONE / NAS100
-JP225Cash / JP225Cash# / JPN225 -> PEPPERSTONE / JPN225
+GOLD / GOLD# / XAUUSD / XAU/USD     -> OANDA / XAUUSD
+USDJPY / USDJPY#                    -> OANDA / USDJPY
+US100 / US100Cash / US100Cash# / NAS100 -> PEPPERSTONE / NAS100
+JP225Cash / JP225Cash# / JPN225    -> PEPPERSTONE / JPN225
 ```
+
+`US100`, `US100Cash`, and `US100Cash#` are operationally equivalent user inputs for the same canonical `US100` instrument. `NAS100` remains the provider-facing alias family member and routes to the same provider symbol.
 
 Terminal `#` remains broker suffix normalization before canonical resolution.
 
@@ -168,6 +170,21 @@ GOLD#
 The run must never stop merely because the user supplied no chart or no separate prepared Market Input.
 
 Equivalent aliases (`GOLD`, `GOLD#`, `XAUUSD`, `XAU/USD`) must enter the same provider route. `USDJPY` and `USDJPY#` must likewise enter the same provider route.
+
+For US100, all of the following commands must resolve identically before Native calls:
+
+```text
+tc スポット US100 エントリー前
+tc スポット US100Cash エントリー前
+tc スポット US100Cash# エントリー前
+```
+
+All three must resolve to:
+
+```text
+canonical US100
+-> PEPPERSTONE / NAS100
+```
 
 ## 9. Explicit limitation
 

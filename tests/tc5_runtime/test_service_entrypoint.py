@@ -47,6 +47,8 @@ class ServiceEntrypointTests(unittest.TestCase):
                 raw_sink=FileRawSink(tmp),
                 timestamp="2026-09-13T00:00:00Z",
                 source_run_id="service-normal-1",
+                used_today_before_run=10,
+                usage_as_of="2026-09-14T10:34:00Z",
             )
 
             self.assertEqual(
@@ -61,6 +63,11 @@ class ServiceEntrypointTests(unittest.TestCase):
             self.assertEqual(result.tradeplan_state["symbol"], "GOLD")
             self.assertEqual(result.tradeplan_state["source_engine"], "TC")
             self.assertFalse(result.tradeplan_state["execution_permission"])
+            self.assertEqual(result.runtime_usage.current_run_calls, 3)
+            self.assertEqual(result.runtime_usage.used_today, 13)
+            self.assertEqual(result.runtime_usage.remaining_after_reserve, 17)
+            self.assertEqual(result.runtime_usage.spot_equivalent, 5)
+            self.assertEqual(result.runtime_usage.next_reset_utc, "2026-09-15T00:00:00Z")
             self.assertEqual(len(list(Path(tmp).rglob("*_native.json"))), 3)
 
 

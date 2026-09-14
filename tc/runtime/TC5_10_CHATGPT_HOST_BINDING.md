@@ -30,7 +30,8 @@ ChatGPT is the operational Host. On an explicit TC Spot command it must:
 3. issue the required TradingCursor Native calls exactly by profile;
 4. preserve Native responses as the source of truth;
 5. apply the frozen TC4 mapping/state semantics and TC5 role policy;
-6. return the TC Spot result to the user.
+6. account for successful Native-call consumption under TC5-11;
+7. return the TC Spot result and Runtime usage block to the user.
 
 ChatGPT must not inject web analysis, NODA rules, independent technical judgment, or a substitute interval into TC Spot.
 
@@ -101,6 +102,36 @@ Command
 
 The ChatGPT Host must preserve the same semantics even though the external TradingCursor connector is invoked by the ChatGPT host rather than imported by repository Python code.
 
+### 4.1 Usage accounting boundary
+
+TC usage accounting is Host Runtime telemetry, not TradePlanState.
+
+The Host must count a Native call as consumed only after the TradingCursor Native client returns a non-empty response mapping. The count boundary is before Raw preservation, Adapter mapping and Normalizer execution so a provider call already consumed is not lost if a downstream stage fails.
+
+The current local budget policy is:
+
+```text
+daily limit: 50 Native calls
+reset: 00:00 UTC = 09:00 JST
+scheduled reserve: 20 calls by default
+spot conversion: 3 Native calls = approximately 1 spot
+```
+
+For each completed run:
+
+```text
+used_today_after = used_today_before + current_run_successful_calls
+remaining_raw = max(0, 50 - used_today_after)
+remaining_after_schedule = max(0, remaining_raw - scheduled_reserve_remaining)
+spot_equivalent = floor(remaining_after_schedule / 3)
+```
+
+The Host may replace the default 20-call scheduled reserve with a known remaining scheduled workload. Scheduled calls actually consumed belong in the daily used count; only future/pending scheduled calls remain in the reserve.
+
+If the Host cannot establish `used_today_before`, it must not invent a remaining quota. It still displays exact current-run consumption and marks remaining/spot-equivalent as `不明`.
+
+This is a local operational budget model because TradingCursor Native does not provide a dedicated remaining-quota lookup contract in the current integration.
+
 ## 5. Operational symbol registry
 
 ```text
@@ -130,6 +161,8 @@ ACTIONABLE / TRADE never grants execution permission.
 Environment and Setup are retained as role evidence. TC5-10 does not add a new alignment/voting gate.
 
 Runtime/provider failure is not a Trade State and must not be converted into WAIT/HOLD/INVALID merely because Market Input is absent.
+
+Usage exhaustion or usage-accounting uncertainty also remains Runtime state and must never be mapped into a Trade State.
 
 ## 7. Freeze qualification for this host mode
 
@@ -165,6 +198,7 @@ GOLD#
 -> Native 1h
 -> Native 15m only if H1 explicitly requires drilldown
 -> TC4/TC5 mapping and TradePlanState
+-> Runtime usage block
 ```
 
 The run must never stop merely because the user supplied no chart or no separate prepared Market Input.

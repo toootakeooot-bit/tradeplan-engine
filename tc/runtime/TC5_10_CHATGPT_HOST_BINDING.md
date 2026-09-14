@@ -60,6 +60,31 @@ When a required Native call fails:
 
 This guard is fail-closed: **Native call first; provider/runtime error only after observed failure; no substitute analysis.**
 
+### 2.2 Device / session independence
+
+The Native-first decision is independent of client presentation and chat-session state.
+
+The following MUST NOT be used as a reason to skip or stop before the Native sequence:
+
+- mobile vs desktop client;
+- screen size or whether the full chart is visible;
+- new chat vs existing chat;
+- session length or visible history;
+- absence of an uploaded chart;
+- absence of pre-supplied Market Input.
+
+For an accepted TC Spot command, device/session/chart context is non-authoritative. The Host must produce the provider/timeframe plan and attempt TradingCursor Native first.
+
+A zero-attempt stop for `チャート入力がない`, `Market Input未取得`, `スマホでは全体が見えない`, or equivalent reasons is a **Native-first regression violation** under TC5-13.
+
+See:
+
+```text
+tc/runtime/TC5_13_DEVICE_SESSION_NATIVE_FIRST_GUARD.md
+tc/runtime/host_guard.py
+tests/tc5_runtime/test_host_native_first_guard.py
+```
+
 ## 3. Profile call contract
 
 NORMAL:
@@ -202,6 +227,8 @@ GOLD#
 ```
 
 The run must never stop merely because the user supplied no chart or no separate prepared Market Input.
+
+The same invariant applies regardless of mobile/desktop client or new/existing chat session. Those presentation/session differences must not alter the initial Native request plan or authorize a pre-Native STOP.
 
 Equivalent aliases (`GOLD`, `GOLD#`, `XAUUSD`, `XAU/USD`) must enter the same provider route. `USDJPY` and `USDJPY#` must likewise enter the same provider route.
 

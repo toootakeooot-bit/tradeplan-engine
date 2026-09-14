@@ -22,3 +22,5 @@ jobs:
         run: python -m unittest discover -s tests/tc5_8 -p 'test_*.py' -v
       - name: Run TC5 runtime core regression
         run: python -m unittest discover -s tests/tc5_runtime -p 'test_*.py' -v
+      - name: Run TC5 notification regression
+        run: python -m unittest discover -s tests/tc5_notification -p 'test_*.py' -v

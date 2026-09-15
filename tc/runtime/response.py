@@ -11,17 +11,33 @@ def _by_timeframe(records: Sequence[NormalizedTCState]) -> Mapping[str, Normaliz
     return {record.timeframe: record for record in records}
 
 
+def _provenance_rows(values: Sequence[Any] | None) -> list[dict[str, Any]]:
+    rows = []
+    for value in values or ():
+        rows.append(
+            {
+                "timeframe": getattr(value, "timeframe", None),
+                "source_mode": getattr(value, "source_mode", None),
+                "fetched_at": getattr(value, "fetched_at", None),
+                "cache_age_seconds": getattr(value, "cache_age_seconds", None),
+                "reason": getattr(value, "reason", None),
+            }
+        )
+    return rows
+
+
 def build_tradeplan_state(
     *,
     aggregate: TCRoleAggregate,
     normalized_records: Sequence[NormalizedTCState],
     resolved_symbol: ResolvedSymbol,
     timestamp: str | None = None,
+    timeframe_provenance: Sequence[Any] | None = None,
 ) -> dict[str, Any]:
-    """Build the provisional common output surface for TC Spot.
+    """Build the provisional common output surface for TC Spot/Periodic.
 
-    This does not finalize the Common schema for NODA. It only emits fields
-    already authorized by the provisional TradePlanState direction.
+    TC5-15 adds acquisition provenance only. Decision semantics remain sourced
+    from the frozen normalized records and common role aggregation.
     """
     records = _by_timeframe(normalized_records)
     environment_tf = aggregate.role_sources.get("environment")
@@ -86,6 +102,7 @@ def build_tradeplan_state(
             "normalized_symbol": resolved_symbol.normalized_symbol,
             "canonical_symbol": resolved_symbol.canonical_symbol,
             "provider_map_rule": resolved_symbol.provider_map_rule,
+            "timeframe_provenance": _provenance_rows(timeframe_provenance),
         },
         "source_engine": "TC",
         "execution_permission": False,

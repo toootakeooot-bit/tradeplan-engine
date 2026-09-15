@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/tc-v1
+      - feature/tc5-15-tf-cache
   workflow_dispatch:
 
 jobs:

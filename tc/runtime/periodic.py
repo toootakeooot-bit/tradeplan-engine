@@ -190,7 +190,7 @@ def run_periodic_symbol(
         results[decision.timeframe] = _tf_result(normalized)
 
     # 05:03 normally reuses the previous 21:03 H4. Refresh it only if H1 is an
-    # entry candidate and the H4 evidence is stale enough to affect confidence.
+    # entry candidate and the H4 evidence is older than one H4 interval.
     h1 = next((r for r in normalized_records if r.timeframe == "H1"), None)
     if slot_id == "05:03" and h1 is not None and resolver.needs_0503_h4_refresh(resolved_symbol=resolved, h1=h1, now=now):
         execution_order += 1
@@ -216,6 +216,9 @@ def run_periodic_symbol(
             provenance.append(tf_provenance)
             results["H4"] = _tf_result(normalized)
         except OrchestratorError as exc:
+            # H4 was explicitly deemed too stale for an actionable 05:03 H1.
+            # Do not silently finalize against that stale setup evidence.
+            results.pop("H4", None)
             errors.append(PeriodicError("H4", exc.code, str(exc)))
 
     aggregate: TCRoleAggregate | None = None

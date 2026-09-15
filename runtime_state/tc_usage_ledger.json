@@ -1,0 +1,7 @@
+{
+  "schema_version": "TC5_16_USAGE_LEDGER_V1",
+  "reset_basis": "00:00 UTC = 09:00 JST",
+  "current_window_start_utc": null,
+  "successful_native_calls": 0,
+  "events": []
+}

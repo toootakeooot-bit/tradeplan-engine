@@ -66,6 +66,7 @@ def run_spot_command(
         normalized_records=run_result.normalized_records,
         resolved_symbol=resolved_symbol,
         timestamp=timestamp,
+        timeframe_provenance=run_result.timeframe_provenance,
     )
     reserve = scheduled_reserve_calls
     if reserve is None and cache is not None:

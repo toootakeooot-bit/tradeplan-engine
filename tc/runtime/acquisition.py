@@ -12,7 +12,7 @@ from tc.runtime.tf_cache import CacheLookup, TimeframeCache
 JST = timezone(timedelta(hours=9))
 SCHEDULED_SYMBOLS: Tuple[str, ...] = ("GOLD", "USDJPY", "US100")
 H1_SPOT_MAX_AGE_SECONDS = 90 * 60
-EARLY_SLOT_H4_REFRESH_AFTER_SECONDS = 6 * 60 * 60
+EARLY_SLOT_H4_REFRESH_AFTER_SECONDS = 4 * 60 * 60
 
 
 @dataclass(frozen=True)
@@ -139,11 +139,11 @@ class MarketInputResolver:
         h1: NormalizedTCState,
         now: datetime | None = None,
     ) -> bool:
-        """Refresh stale H4 at 05:03 only for an H1 entry candidate.
+        """Refresh H4 at 05:03 only for an H1 entry candidate.
 
-        Six hours is a conservative stale threshold: the normal 21:03 -> 05:03
-        gap is about eight hours, so ACTIONABLE H1 receives fresh H4 while WAIT
-        does not spend an extra Native call.
+        One H4 interval (four hours) is the freshness threshold. Therefore the
+        normal 21:03 -> 05:03 eight-hour gap refreshes H4 when H1 is ACTIONABLE,
+        while a more recent Spot-refreshed H4 can still be reused.
         """
         if h1.trade_state != "ACTIONABLE":
             return False

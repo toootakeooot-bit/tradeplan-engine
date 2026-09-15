@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any, Mapping
 
 from tc.adapter.native_client import TradingCursorNativeClient
+from tc.runtime.acquisition import BASE_PERIODIC_CALLS_PER_DAY
 from tc.runtime.command import TCSpotRuntimeRequest, parse_spot_command
 from tc.runtime.host_binding import UsageTrackingNativeClient
 from tc.runtime.orchestrator import RawSink, SpotRunResult, run_spot_entry_pre
@@ -66,10 +67,13 @@ def run_spot_command(
         resolved_symbol=resolved_symbol,
         timestamp=timestamp,
     )
+    reserve = scheduled_reserve_calls
+    if reserve is None and cache is not None:
+        reserve = BASE_PERIODIC_CALLS_PER_DAY
     runtime_usage = build_usage_runtime_info(
         current_run_calls=tracking_client.successful_calls,
         used_today_before_run=used_today_before_run,
-        scheduled_reserve_calls=scheduled_reserve_calls,
+        scheduled_reserve_calls=reserve,
         as_of=usage_as_of,
     )
     return TCSpotServiceResult(

@@ -179,7 +179,7 @@ H4 = previous 21:03 CACHE
 H1 = 05:03 LIVE
 ```
 
-If H1 is ACTIONABLE and H4 cache age is greater than six hours, H4 is refreshed once LIVE before final aggregation. This makes the intended 21:03 -> 05:03 eight-hour gap refresh only when the Decision timeframe presents an entry candidate.
+If H1 is ACTIONABLE and H4 cache age is greater than one H4 interval (four hours), H4 is refreshed once LIVE before final aggregation. This makes the intended 21:03 -> 05:03 eight-hour gap refresh only when the Decision timeframe presents an entry candidate, while a more recent Spot-refreshed H4 can still be reused.
 
 WAIT does not spend the additional H4 call.
 

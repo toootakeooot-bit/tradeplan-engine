@@ -10,6 +10,7 @@ from tc.runtime.host_binding import UsageTrackingNativeClient
 from tc.runtime.orchestrator import RawSink, SpotRunResult, run_spot_entry_pre
 from tc.runtime.response import build_tradeplan_state
 from tc.runtime.symbol import ResolvedSymbol, resolve_symbol
+from tc.runtime.tf_cache import TimeframeCache
 from tc.runtime.usage import TCUsageRuntimeInfo, build_usage_runtime_info
 
 
@@ -32,17 +33,20 @@ def run_spot_command(
     used_today_before_run: int | None = None,
     scheduled_reserve_calls: int | None = None,
     usage_as_of: datetime | str | None = None,
+    cache: TimeframeCache | None = None,
+    cache_as_of: datetime | None = None,
 ) -> TCSpotServiceResult:
     """Run one complete TC Spot command through the repository runtime core.
 
-    Host responsibility is intentionally narrow: supply a Native Client binding
-    and a Raw sink. The repository owns command parsing, symbol/provider
-    resolution, profile planning, orchestration, Raw wrapping, normalization,
-    role aggregation, and provisional TradePlanState construction.
+    When `cache` is supplied, NORMAL Spot is cache-first under TC5-15: D1/H4
+    reuse shared scheduled evidence, H1 is reused for up to 90 minutes, and
+    only missing/expired evidence is fetched LIVE. The same result is then sent
+    through the existing common aggregation and TradePlanState construction.
 
-    Usage information is kept outside TradePlanState. The current run count is
-    measured at the Native response boundary. Daily remaining figures are only
-    calculated when the Host supplies its pre-run daily usage ledger value.
+    Usage information is kept outside TradePlanState. `current_run_calls` counts
+    only successful Native responses in this run; cache hits consume zero calls.
+    Daily remaining figures are calculated only when the Host supplies an
+    authoritative pre-run local ledger value.
     """
     command_request = parse_spot_command(command_text)
     resolved_symbol = resolve_symbol(command_request.user_symbol)
@@ -53,6 +57,8 @@ def run_spot_command(
         client=tracking_client,
         raw_sink=raw_sink,
         source_run_id=source_run_id,
+        cache=cache,
+        now=cache_as_of,
     )
     tradeplan_state = build_tradeplan_state(
         aggregate=run_result.aggregate,

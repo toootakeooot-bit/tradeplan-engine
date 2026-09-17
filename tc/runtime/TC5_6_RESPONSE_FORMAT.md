@@ -1,10 +1,40 @@
-# TC5-6 — TC Spot Response Format
+# TC5-6 — TC Spot / Periodic Response Format
 
-Status: **REVISED / COMMON OUTPUT PRESERVED**
+Status: **REVISED BY TC5-17 / FIXED TF TABLE**
 
-TC Spot user output follows the common TradePlanState direction rather than exposing a mandatory four-timeframe table as the primary result.
+TC Spot and TC periodic user output must include the same fixed per-symbol timeframe table whenever at least one reportable timeframe judgement exists.
 
-When the profile gate is finalized, the outward strategy payload is conceptually:
+Required table:
+
+```text
+| TF | 判定 | Entry | SL | TP1 | TP2 | TP3 |
+|---|---|---:|---:|---:|---:|---:|
+| D1 | ... | ... | ... | ... | ... | ... |
+| H4 | ... | ... | ... | ... | ... | ... |
+| H1 | ... | ... | ... | ... | ... | ... |
+| M15 | ... | ... | ... | ... | ... | ... |
+```
+
+## Fixed table rules
+
+- row order is always `D1 -> H4 -> H1 -> M15`;
+- M15 is omitted when M15 was not acquired;
+- any timeframe with no reportable TC judgement is omitted;
+- no confidence / probability / score column is allowed;
+- `ACTIONABLE + LONG` -> `🟢 LONG`;
+- `ACTIONABLE + SHORT` -> `🔴 SHORT`;
+- `WAIT + LONG` -> `🟡 LONG待ち`;
+- `WAIT + SHORT` -> `🟡 SHORT待ち`;
+- directionless explicit WAIT may be shown as `🟡 WAIT`;
+- explicit current INVALID may be shown as `⚪ LONG無効`, `⚪ SHORT無効`, or `⚪ INVALID` when direction is absent;
+- `UNDETERMINED` is not a reportable judgement row;
+- Entry/SL/TP values come only from the same timeframe's normalized TC record;
+- TP display is limited to TP1/TP2/TP3; missing values are absent markers and additional Native TP values remain retained in underlying state rather than being discarded;
+- values must never be synthesized to fill the table.
+
+The table is a presentation layer. It does not replace or alter the common TradePlanState decision fields.
+
+The outward strategy payload remains conceptually:
 
 ```text
 TradePlanState
@@ -41,9 +71,11 @@ The schema remains provisional until NODA/Common review; TC5 does not finalize t
 - decision source timeframe;
 - confirmation source timeframe when used;
 - used timeframes and record/raw references;
-- provider source/symbol.
+- provider source/symbol;
+- `report_format = TF_DECISION_TABLE_V1`;
+- `timeframe_decisions`, containing the exact rows used by the fixed user-facing table.
 
-Entry/SL/TP come from the profile decision plan only. Values from D1/H4/H1/M15 are not mixed to manufacture a better-looking plan.
+Entry/SL/TP in the common plan come from the profile decision plan only. The presentation table may show each timeframe's own Native-derived Entry/SL/TP for comparison, but values from D1/H4/H1/M15 must never be mixed to manufacture a better-looking plan.
 
 ## Runtime presentation outside TradePlanState
 

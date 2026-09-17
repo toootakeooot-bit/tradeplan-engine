@@ -54,7 +54,13 @@ def _decision_label(record: NormalizedTCState) -> str | None:
             return "⚪ SHORT無効"
         return "⚪ INVALID"
 
-    # UNDETERMINED or unknown means there is no reportable judgement.
+    if record.trade_state == "UNDETERMINED":
+        if direction == "LONG":
+            return "⚪ LONG判定保留"
+        if direction == "SHORT":
+            return "⚪ SHORT判定保留"
+        return "⚪ 判定保留"
+
     return None
 
 
@@ -66,7 +72,7 @@ def build_timeframe_decision_rows(
     Rules:
     - fixed order: D1 -> H4 -> H1 -> M15;
     - M15 is absent when it was not acquired;
-    - a timeframe with no reportable judgement is absent;
+    - every acquired normalized timeframe is shown for ACTIONABLE/WAIT/INVALID/UNDETERMINED;
     - no confidence/score field is created;
     - Entry/SL/TP values are copied only from that timeframe's TC normalized record;
     - up to the first three Native take-profit values are displayed, without synthesis.
@@ -111,8 +117,8 @@ def _display_value(value: Any) -> str:
 def format_timeframe_decision_table(rows: Sequence[Mapping[str, Any]]) -> str:
     """Render the fixed TC per-symbol report table as Markdown.
 
-    Empty rows intentionally produce an empty string: when there is no judgement,
-    no empty placeholder table is shown.
+    Empty rows intentionally produce an empty string when no normalized timeframe
+    record is available to display.
     """
     if not rows:
         return ""

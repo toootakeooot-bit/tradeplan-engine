@@ -7,6 +7,10 @@ from tc.runtime.aggregate import TCRoleAggregate
 from tc.runtime.symbol import ResolvedSymbol
 
 
+TIMEFRAME_REPORT_ORDER = ("D1", "H4", "H1", "M15")
+REPORT_FORMAT_VERSION = "TF_DECISION_TABLE_V1"
+
+
 def _by_timeframe(records: Sequence[NormalizedTCState]) -> Mapping[str, NormalizedTCState]:
     return {record.timeframe: record for record in records}
 
@@ -26,6 +30,112 @@ def _provenance_rows(values: Sequence[Any] | None) -> list[dict[str, Any]]:
     return rows
 
 
+def _decision_label(record: NormalizedTCState) -> str | None:
+    direction = record.entry_direction if record.entry_direction in {"LONG", "SHORT"} else None
+
+    if record.trade_state == "ACTIONABLE":
+        if direction == "LONG":
+            return "🟢 LONG"
+        if direction == "SHORT":
+            return "🔴 SHORT"
+        return None
+
+    if record.trade_state == "WAIT":
+        if direction == "LONG":
+            return "🟡 LONG待ち"
+        if direction == "SHORT":
+            return "🟡 SHORT待ち"
+        return "🟡 WAIT"
+
+    if record.trade_state == "INVALID":
+        if direction == "LONG":
+            return "⚪ LONG無効"
+        if direction == "SHORT":
+            return "⚪ SHORT無効"
+        return "⚪ INVALID"
+
+    # UNDETERMINED or unknown means there is no reportable judgement.
+    return None
+
+
+def build_timeframe_decision_rows(
+    normalized_records: Sequence[NormalizedTCState],
+) -> list[dict[str, Any]]:
+    """Build the fixed user-facing D1/H4/H1/M15 report rows.
+
+    Rules:
+    - fixed order: D1 -> H4 -> H1 -> M15;
+    - M15 is absent when it was not acquired;
+    - a timeframe with no reportable judgement is absent;
+    - no confidence/score field is created;
+    - Entry/SL/TP values are copied only from that timeframe's TC normalized record;
+    - up to the first three Native take-profit values are displayed, without synthesis.
+    """
+    records = _by_timeframe(normalized_records)
+    rows: list[dict[str, Any]] = []
+
+    for timeframe in TIMEFRAME_REPORT_ORDER:
+        record = records.get(timeframe)
+        if record is None:
+            continue
+
+        decision = _decision_label(record)
+        if decision is None:
+            continue
+
+        take_profits = list(record.take_profits[:3])
+        while len(take_profits) < 3:
+            take_profits.append(None)
+
+        rows.append(
+            {
+                "timeframe": timeframe,
+                "decision": decision,
+                "entry": record.entry_price,
+                "sl": record.stop_loss,
+                "tp1": take_profits[0],
+                "tp2": take_profits[1],
+                "tp3": take_profits[2],
+            }
+        )
+
+    return rows
+
+
+def _display_value(value: Any) -> str:
+    if value is None or value == "":
+        return "—"
+    return str(value)
+
+
+def format_timeframe_decision_table(rows: Sequence[Mapping[str, Any]]) -> str:
+    """Render the fixed TC per-symbol report table as Markdown.
+
+    Empty rows intentionally produce an empty string: when there is no judgement,
+    no empty placeholder table is shown.
+    """
+    if not rows:
+        return ""
+
+    lines = [
+        "| TF | 判定 | Entry | SL | TP1 | TP2 | TP3 |",
+        "|---|---|---:|---:|---:|---:|---:|",
+    ]
+    for row in rows:
+        lines.append(
+            "| {timeframe} | {decision} | {entry} | {sl} | {tp1} | {tp2} | {tp3} |".format(
+                timeframe=_display_value(row.get("timeframe")),
+                decision=_display_value(row.get("decision")),
+                entry=_display_value(row.get("entry")),
+                sl=_display_value(row.get("sl")),
+                tp1=_display_value(row.get("tp1")),
+                tp2=_display_value(row.get("tp2")),
+                tp3=_display_value(row.get("tp3")),
+            )
+        )
+    return "\n".join(lines)
+
+
 def build_tradeplan_state(
     *,
     aggregate: TCRoleAggregate,
@@ -36,8 +146,9 @@ def build_tradeplan_state(
 ) -> dict[str, Any]:
     """Build the provisional common output surface for TC Spot/Periodic.
 
-    TC5-15 adds acquisition provenance only. Decision semantics remain sourced
-    from the frozen normalized records and common role aggregation.
+    TC5-15 adds acquisition provenance only. TC5-17 adds a presentation-only
+    per-timeframe decision row set under evidence. Decision semantics remain
+    sourced from the frozen normalized records and common role aggregation.
     """
     records = _by_timeframe(normalized_records)
     environment_tf = aggregate.role_sources.get("environment")
@@ -55,6 +166,7 @@ def build_tradeplan_state(
 
     status = aggregate.common_status
     direction = aggregate.direction if aggregate.direction in {"LONG", "SHORT"} else "NONE"
+    timeframe_decisions = build_timeframe_decision_rows(normalized_records)
 
     return {
         "symbol": resolved_symbol.canonical_symbol,
@@ -103,6 +215,8 @@ def build_tradeplan_state(
             "canonical_symbol": resolved_symbol.canonical_symbol,
             "provider_map_rule": resolved_symbol.provider_map_rule,
             "timeframe_provenance": _provenance_rows(timeframe_provenance),
+            "report_format": REPORT_FORMAT_VERSION,
+            "timeframe_decisions": timeframe_decisions,
         },
         "source_engine": "TC",
         "execution_permission": False,

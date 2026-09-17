@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from collections import Counter
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, Mapping, Sequence
 
 from tc.notification.model import (
     TRIGGER_PERIODIC,
@@ -36,6 +36,29 @@ def _timestamp_jst(timestamp: str) -> tuple[str, str]:
         return timestamp, timestamp
 
 
+def _timeframe_table_lines(rows: Sequence[Mapping[str, Any]]) -> list[str]:
+    if not rows:
+        return []
+
+    lines = [
+        "| TF | 判定 | Entry | SL | TP1 | TP2 | TP3 |",
+        "|---|---|---:|---:|---:|---:|---:|",
+    ]
+    for row in rows:
+        lines.append(
+            "| {timeframe} | {decision} | {entry} | {sl} | {tp1} | {tp2} | {tp3} |".format(
+                timeframe=_format_value(row.get("timeframe")),
+                decision=_format_value(row.get("decision")),
+                entry=_format_value(row.get("entry")),
+                sl=_format_value(row.get("sl")),
+                tp1=_format_value(row.get("tp1")),
+                tp2=_format_value(row.get("tp2")),
+                tp3=_format_value(row.get("tp3")),
+            )
+        )
+    return lines
+
+
 def _result_lines(result: TCNotificationResult) -> list[str]:
     if result.status == "ERROR":
         return [
@@ -46,24 +69,35 @@ def _result_lines(result: TCNotificationResult) -> list[str]:
         ]
 
     permission = "YES" if result.execution_permission else "NO"
-    return [
+    lines = [
         f"銘柄：{result.symbol}",
-        f"Profile：{_format_value(result.profile)}",
-        f"判定：{result.status}",
-        f"方向：{result.direction}",
-        "",
-        f"Environment：{_format_value(result.environment)}",
-        f"Setup：{_format_value(result.setup)}",
-        "",
-        f"Entry：{_format_value(result.entry_price)}",
-        f"SL：{_format_value(result.stop_loss)}",
-        f"TP：{_format_value(result.take_profits)}",
-        f"Invalidation：{_format_value(result.invalidation)}",
-        "",
-        f"使用TF：{_format_value(result.used_timeframes)}",
-        f"Provider：{_format_value(result.provider)} / {_format_value(result.provider_symbol)}",
-        f"Execution Permission：{permission}",
     ]
+
+    table_lines = _timeframe_table_lines(result.timeframe_rows)
+    if table_lines:
+        lines.extend(["", *table_lines])
+
+    lines.extend(
+        [
+            "",
+            f"Profile：{_format_value(result.profile)}",
+            f"判定：{result.status}",
+            f"方向：{result.direction}",
+            "",
+            f"Environment：{_format_value(result.environment)}",
+            f"Setup：{_format_value(result.setup)}",
+            "",
+            f"Entry：{_format_value(result.entry_price)}",
+            f"SL：{_format_value(result.stop_loss)}",
+            f"TP：{_format_value(result.take_profits)}",
+            f"Invalidation：{_format_value(result.invalidation)}",
+            "",
+            f"使用TF：{_format_value(result.used_timeframes)}",
+            f"Provider：{_format_value(result.provider)} / {_format_value(result.provider_symbol)}",
+            f"Execution Permission：{permission}",
+        ]
+    )
+    return lines
 
 
 def format_gmail_subject(payload: TCNotificationPayload) -> str:

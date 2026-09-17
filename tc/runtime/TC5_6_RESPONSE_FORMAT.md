@@ -2,7 +2,7 @@
 
 Status: **REVISED BY TC5-17 / FIXED TF TABLE**
 
-TC Spot and TC periodic user output must include the same fixed per-symbol timeframe table whenever at least one reportable timeframe judgement exists.
+TC Spot and TC periodic user output must include the same fixed per-symbol timeframe table whenever at least one acquired normalized timeframe exists.
 
 Required table:
 
@@ -19,7 +19,7 @@ Required table:
 
 - row order is always `D1 -> H4 -> H1 -> M15`;
 - M15 is omitted when M15 was not acquired;
-- any timeframe with no reportable TC judgement is omitted;
+- acquired normalized timeframes are shown for `ACTIONABLE`, `WAIT`, `INVALID`, and `UNDETERMINED`;
 - no confidence / probability / score column is allowed;
 - `ACTIONABLE + LONG` -> `🟢 LONG`;
 - `ACTIONABLE + SHORT` -> `🔴 SHORT`;
@@ -27,12 +27,14 @@ Required table:
 - `WAIT + SHORT` -> `🟡 SHORT待ち`;
 - directionless explicit WAIT may be shown as `🟡 WAIT`;
 - explicit current INVALID may be shown as `⚪ LONG無効`, `⚪ SHORT無効`, or `⚪ INVALID` when direction is absent;
-- `UNDETERMINED` is not a reportable judgement row;
-- Entry/SL/TP values come only from the same timeframe's normalized TC record;
+- `UNDETERMINED + LONG` -> `⚪ LONG判定保留`;
+- `UNDETERMINED + SHORT` -> `⚪ SHORT判定保留`;
+- directionless `UNDETERMINED` -> `⚪ 判定保留`;
+- Entry/SL/TP values come only from the same timeframe's normalized TC record, including UNDETERMINED rows when TC supplied those values;
 - TP display is limited to TP1/TP2/TP3; missing values are absent markers and additional Native TP values remain retained in underlying state rather than being discarded;
 - values must never be synthesized to fill the table.
 
-The table is a presentation layer. It does not replace or alter the common TradePlanState decision fields.
+The table is a presentation layer. It does not replace or alter the common TradePlanState decision fields. In particular, showing an `UNDETERMINED` row does not convert it into `WAIT`, `INVALID`, or `TRADE`.
 
 The outward strategy payload remains conceptually:
 

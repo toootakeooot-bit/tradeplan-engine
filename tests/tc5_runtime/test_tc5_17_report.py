@@ -24,7 +24,7 @@ def record(
         stop_loss=sl,
         take_profits=tuple(tp),
         trade_state=state,
-        state_basis="EXPLICIT_NATIVE_TEXT",
+        state_basis="EXPLICIT_NATIVE_TEXT" if state != "UNDETERMINED" else "NOT_ENOUGH_EVIDENCE",
         wait_evidence="wait" if state == "WAIT" else None,
         invalidation_evidence=None,
         alternative_scenario_evidence=None,
@@ -33,7 +33,7 @@ def record(
 
 
 class TC517ReportTests(unittest.TestCase):
-    def test_fixed_order_omits_no_judgement_and_missing_m15(self):
+    def test_fixed_order_and_missing_m15(self):
         rows = build_timeframe_decision_rows(
             [
                 record("H1", direction="LONG", state="WAIT", entry=155.662),
@@ -52,7 +52,7 @@ class TC517ReportTests(unittest.TestCase):
         self.assertNotIn("| M15 |", table)
         self.assertNotIn("確度", table)
 
-    def test_m15_is_shown_only_when_present_with_reportable_judgement(self):
+    def test_m15_is_shown_only_when_acquired_and_undetermined_is_visible(self):
         rows = build_timeframe_decision_rows(
             [
                 record("D1"),
@@ -64,7 +64,7 @@ class TC517ReportTests(unittest.TestCase):
         self.assertEqual(rows[-1]["timeframe"], "M15")
         self.assertEqual(rows[-1]["decision"], "🟡 LONG待ち")
 
-        hidden = build_timeframe_decision_rows(
+        undetermined = build_timeframe_decision_rows(
             [
                 record("D1"),
                 record("H4"),
@@ -72,7 +72,18 @@ class TC517ReportTests(unittest.TestCase):
                 record("M15", direction="LONG", state="UNDETERMINED", entry=155.700),
             ]
         )
-        self.assertNotIn("M15", [row["timeframe"] for row in hidden])
+        self.assertEqual(undetermined[-1]["timeframe"], "M15")
+        self.assertEqual(undetermined[-1]["decision"], "⚪ LONG判定保留")
+        self.assertEqual(undetermined[-1]["entry"], 155.700)
+
+    def test_directionless_undetermined_is_shown_as_hold(self):
+        rows = build_timeframe_decision_rows(
+            [record("H1", direction=None, state="UNDETERMINED", entry=None, sl=None, tp=())]
+        )
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["decision"], "⚪ 判定保留")
+        table = format_timeframe_decision_table(rows)
+        self.assertIn("| H1 | ⚪ 判定保留 | — | — | — | — | — |", table)
 
     def test_tp_is_capped_at_three_for_display_without_synthesizing_values(self):
         rows = build_timeframe_decision_rows(

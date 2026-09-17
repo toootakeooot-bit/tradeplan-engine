@@ -13,7 +13,17 @@ from tc.notification.outbox import FileNotificationOutbox
 from tc.runtime.usage import build_usage_runtime_info
 
 
-def state(symbol, status, direction, *, profile="NORMAL", entry=None, sl=None, tp=None):
+def state(
+    symbol,
+    status,
+    direction,
+    *,
+    profile="NORMAL",
+    entry=None,
+    sl=None,
+    tp=None,
+    timeframe_rows=None,
+):
     return {
         "symbol": symbol,
         "status": status,
@@ -29,6 +39,7 @@ def state(symbol, status, direction, *, profile="NORMAL", entry=None, sl=None, t
             "used_timeframes": ["D1", "H4", "H1"] if profile == "NORMAL" else ["H4", "H1", "M15"],
             "provider": "OANDA" if symbol in {"GOLD", "USDJPY"} else "PEPPERSTONE",
             "provider_symbol": {"GOLD": "XAUUSD", "USDJPY": "USDJPY", "US100": "NAS100", "JP225": "JPN225"}.get(symbol),
+            "timeframe_decisions": timeframe_rows or [],
         },
         "source_engine": "TC",
         "execution_permission": False,
@@ -69,6 +80,59 @@ class NotificationTests(unittest.TestCase):
         self.assertIn("今回消費：3回", body)
         self.assertIn("予定を抜いた残り：17回", body)
         self.assertIn("Notification ID：tc:spot:spot-1", body)
+
+    def test_fixed_tf_table_has_no_confidence_and_omits_unacquired_m15(self):
+        rows = [
+            {
+                "timeframe": "D1",
+                "decision": "🔴 SHORT",
+                "entry": 155.650,
+                "sl": 157.339,
+                "tp1": 155.650,
+                "tp2": 154.000,
+                "tp3": 152.742,
+            },
+            {
+                "timeframe": "H4",
+                "decision": "🟢 LONG",
+                "entry": 155.655,
+                "sl": 154.900,
+                "tp1": 156.200,
+                "tp2": 156.800,
+                "tp3": 157.500,
+            },
+            {
+                "timeframe": "H1",
+                "decision": "🟢 LONG",
+                "entry": 155.662,
+                "sl": 154.850,
+                "tp1": 156.695,
+                "tp2": 157.000,
+                "tp3": 157.500,
+            },
+        ]
+        payload = build_spot_payload(
+            run_id="spot-table",
+            timestamp="2026-09-14T11:15:00Z",
+            tradeplan_state=state(
+                "USDJPY",
+                "TRADE",
+                "LONG",
+                entry=155.662,
+                sl=154.850,
+                tp=[156.695, 157.000, 157.500],
+                timeframe_rows=rows,
+            ),
+            runtime_usage=self.usage,
+        )
+        _, body = format_gmail_message(payload)
+        self.assertIn("| TF | 判定 | Entry | SL | TP1 | TP2 | TP3 |", body)
+        self.assertIn("| D1 | 🔴 SHORT |", body)
+        self.assertIn("| H4 | 🟢 LONG |", body)
+        self.assertIn("| H1 | 🟢 LONG |", body)
+        self.assertNotIn("| M15 |", body)
+        self.assertNotIn("確度", body)
+        self.assertNotIn("0.75", body)
 
     def test_periodic_cycle_is_one_grouped_message(self):
         payload = build_periodic_payload(

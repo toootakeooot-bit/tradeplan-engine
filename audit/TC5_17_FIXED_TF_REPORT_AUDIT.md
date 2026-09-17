@@ -1,15 +1,13 @@
 # TC5-17 Fixed TF Report Audit
 
 Repository: `toootakeooot-bit/tradeplan-engine`  
-Active branch: `feature/tc5-16-host-scheduler`  
-Implementation branch: `feature/tc5-17-fixed-tf-report`  
-Implementation head: `e3b68798891548c15d02160d8fe525fbe6494b4d`
+Active branch: `feature/tc5-16-host-scheduler`
 
 ## Result
 
-**PASS**
+**PASS — amended: UNDETERMINED rows visible**
 
-TC Spot and TC periodic reporting now carry a fixed per-symbol timeframe table contract:
+TC Spot and TC periodic reporting use the fixed per-symbol timeframe table contract:
 
 ```text
 TF | 判定 | Entry | SL | TP1 | TP2 | TP3
@@ -21,9 +19,9 @@ Confidence/probability/score is not part of the report contract.
 
 - row order is `D1 -> H4 -> H1 -> M15`;
 - M15 is omitted when it was not acquired;
-- a timeframe with no reportable judgement is omitted;
-- `UNDETERMINED` does not create a table row;
-- Entry/SL/TP are copied only from the same timeframe's TC normalized record;
+- acquired normalized timeframes are shown for ACTIONABLE / WAIT / INVALID / UNDETERMINED;
+- `UNDETERMINED` creates a visible `判定保留` row rather than disappearing;
+- Entry/SL/TP are copied only from the same timeframe's TC normalized record, including UNDETERMINED rows when TC supplied them;
 - TP display is limited to TP1/TP2/TP3 without synthesizing missing values;
 - no confidence field is created;
 - the common TradePlanState decision semantics remain unchanged;
@@ -38,8 +36,11 @@ Confidence/probability/score is not part of the report contract.
 - WAIT + SHORT -> `🟡 SHORT待ち`
 - directionless WAIT -> `🟡 WAIT`
 - explicit INVALID -> `⚪ LONG無効` / `⚪ SHORT無効` / `⚪ INVALID`
+- UNDETERMINED + LONG -> `⚪ LONG判定保留`
+- UNDETERMINED + SHORT -> `⚪ SHORT判定保留`
+- directionless UNDETERMINED -> `⚪ 判定保留`
 
-No label is generated for `UNDETERMINED`.
+Displaying UNDETERMINED does not upgrade it to ACTIONABLE, WAIT, INVALID, or TRADE. It remains a presentation-only hold state.
 
 ## Files changed
 
@@ -50,22 +51,6 @@ No label is generated for `UNDETERMINED`.
 - `tests/tc5_runtime/test_tc5_17_report.py`
 - `tests/tc5_notification/test_notification.py`
 
-## Regression validation
-
-GitHub Actions workflow: `TC5 Runtime Regression`  
-Run ID: `35276899306`  
-Result: **SUCCESS**
-
-Passed steps:
-
-- TC4 regression
-- TC5 profile aggregation regression
-- TC5 static pipeline regression
-- TC5 runtime core regression
-- TC5 notification regression
-
-The added TC5-17 tests verify fixed row order, M15 omission, judgement omission, confidence-field absence, TP1/TP2/TP3 capping, and notification table rendering.
-
 ## Boundary audit
 
 | Gate | Result |
@@ -73,7 +58,7 @@ The added TC5-17 tests verify fixed row order, M15 omission, judgement omission,
 | Spot/Periodic common table contract | PASS |
 | D1/H4/H1/M15 fixed order | PASS |
 | M15 absent when not acquired | PASS |
-| no-judgement TF omitted | PASS |
+| UNDETERMINED row visible | PASS |
 | confidence removed | PASS |
 | Entry/SL/TP same-TF source only | PASS |
 | missing TP synthesized | NO |
@@ -82,4 +67,3 @@ The added TC5-17 tests verify fixed row order, M15 omission, judgement omission,
 | TC Native semantics changed | NO |
 | NODA rules introduced | NO |
 | Gmail table rendering | PASS |
-| TC4/TC5 regression | PASS |

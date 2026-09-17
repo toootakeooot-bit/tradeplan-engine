@@ -28,6 +28,7 @@ class TCNotificationResult:
     used_timeframes: tuple[str, ...] = ()
     provider: str | None = None
     provider_symbol: str | None = None
+    timeframe_rows: tuple[Mapping[str, Any], ...] = ()
     execution_permission: bool = False
     runtime_error: str | None = None
 
@@ -89,6 +90,7 @@ def result_from_tradeplan_state(state: Mapping[str, Any]) -> TCNotificationResul
         used_timeframes=tuple(evidence.get("used_timeframes") or ()),
         provider=evidence.get("provider"),
         provider_symbol=evidence.get("provider_symbol"),
+        timeframe_rows=tuple(evidence.get("timeframe_decisions") or ()),
         execution_permission=bool(state.get("execution_permission", False)),
     )
 
@@ -176,6 +178,7 @@ def _result_from_dict(data: Mapping[str, Any]) -> TCNotificationResult:
         used_timeframes=tuple(data.get("used_timeframes") or ()),
         provider=data.get("provider"),
         provider_symbol=data.get("provider_symbol"),
+        timeframe_rows=tuple(data.get("timeframe_rows") or ()),
         execution_permission=bool(data.get("execution_permission", False)),
         runtime_error=data.get("runtime_error"),
     )

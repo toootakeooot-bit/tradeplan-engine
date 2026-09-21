@@ -53,11 +53,11 @@ class FakeClient:
 
 
 class PeriodicSharedCacheTests(unittest.TestCase):
-    def test_1203_uses_cached_d1_h4_and_live_h1_then_spot_reuses_same_evidence(self):
+    def test_1103_uses_cached_d1_h4_and_live_h1_then_spot_reuses_same_evidence(self):
         cache = TimeframeCache()
         sink = FakeSink()
-        at_0903 = datetime(2026, 9, 15, 0, 3, tzinfo=UTC)
-        at_1203 = datetime(2026, 9, 15, 3, 3, tzinfo=UTC)
+        at_0603 = datetime(2026, 9, 14, 21, 3, tzinfo=UTC)
+        at_1103 = datetime(2026, 9, 15, 2, 3, tzinfo=UTC)
 
         first = FakeClient(
             {
@@ -66,38 +66,38 @@ class PeriodicSharedCacheTests(unittest.TestCase):
                 "1h": [native_response("1h", "Traders should wait for confirmation before entering.")],
             }
         )
-        r0903 = run_periodic_symbol(
-            slot_id="09:03",
+        r0603 = run_periodic_symbol(
+            slot_id="06:03",
             user_symbol="GOLD",
             client=first,
             raw_sink=sink,
             cache=cache,
-            now=at_0903,
-            source_run_id="periodic-0903",
+            now=at_0603,
+            source_run_id="periodic-0603",
         )
         self.assertEqual([c[2] for c in first.calls], ["1D", "4h", "1h"])
-        self.assertEqual(r0903.aggregate.common_status, "WAIT")
+        self.assertEqual(r0603.aggregate.common_status, "WAIT")
 
         second = FakeClient(
             {
                 "1h": [native_response("1h", "Traders should wait for confirmation before entering.")],
             }
         )
-        r1203 = run_periodic_symbol(
-            slot_id="12:03",
+        r1103 = run_periodic_symbol(
+            slot_id="11:03",
             user_symbol="GOLD#",
             client=second,
             raw_sink=sink,
             cache=cache,
-            now=at_1203,
-            source_run_id="periodic-1203",
+            now=at_1103,
+            source_run_id="periodic-1103",
         )
         self.assertEqual([c[2] for c in second.calls], ["1h"])
         self.assertEqual(
-            [(p.timeframe, p.source_mode) for p in r1203.timeframe_provenance],
+            [(p.timeframe, p.source_mode) for p in r1103.timeframe_provenance],
             [("D1", "CACHE"), ("H4", "CACHE"), ("H1", "LIVE")],
         )
-        self.assertEqual(r1203.aggregate.common_status, "WAIT")
+        self.assertEqual(r1103.aggregate.common_status, "WAIT")
 
         # Spot at the same time reuses the just-established D1/H4/H1 evidence
         # and reaches the same common aggregation with zero Native calls.
@@ -108,19 +108,19 @@ class PeriodicSharedCacheTests(unittest.TestCase):
             resolved_symbol=resolve_symbol(command.user_symbol),
             client=spot_client,
             raw_sink=sink,
-            source_run_id="spot-after-1203",
+            source_run_id="spot-after-1103",
             cache=cache,
-            now=at_1203,
+            now=at_1103,
         )
         self.assertEqual(spot_client.calls, [])
-        self.assertEqual(spot.aggregate.common_status, r1203.aggregate.common_status)
-        self.assertEqual(spot.aggregate.direction, r1203.aggregate.direction)
+        self.assertEqual(spot.aggregate.common_status, r1103.aggregate.common_status)
+        self.assertEqual(spot.aggregate.direction, r1103.aggregate.direction)
 
     def test_periodic_failure_sets_retry_and_next_slot_retries_once_then_clears(self):
         cache = TimeframeCache()
         sink = FakeSink()
-        at_0903 = datetime(2026, 9, 15, 0, 3, tzinfo=UTC)
-        at_1203 = datetime(2026, 9, 15, 3, 3, tzinfo=UTC)
+        at_0603 = datetime(2026, 9, 15, 0, 3, tzinfo=UTC)
+        at_1103 = datetime(2026, 9, 15, 3, 3, tzinfo=UTC)
         resolved = resolve_symbol("GOLD")
 
         failing = FakeClient(
@@ -131,13 +131,13 @@ class PeriodicSharedCacheTests(unittest.TestCase):
             }
         )
         result = run_periodic_symbol(
-            slot_id="09:03",
+            slot_id="06:03",
             user_symbol="GOLD",
             client=failing,
             raw_sink=sink,
             cache=cache,
-            now=at_0903,
-            source_run_id="periodic-fail-0903",
+            now=at_0603,
+            source_run_id="periodic-fail-0603",
         )
         self.assertEqual([c[2] for c in failing.calls], ["1D", "4h", "1h"])
         self.assertIsNone(result.aggregate)
@@ -158,13 +158,13 @@ class PeriodicSharedCacheTests(unittest.TestCase):
             }
         )
         recovered = run_periodic_symbol(
-            slot_id="12:03",
+            slot_id="11:03",
             user_symbol="GOLD",
             client=recovery,
             raw_sink=sink,
             cache=cache,
-            now=at_1203,
-            source_run_id="periodic-retry-1203",
+            now=at_1103,
+            source_run_id="periodic-retry-1103",
         )
         self.assertEqual([c[2] for c in recovery.calls], ["4h", "1h"])
         self.assertEqual(recovered.aggregate.common_status, "WAIT")

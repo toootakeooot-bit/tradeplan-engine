@@ -8,7 +8,7 @@ from tc.runtime.symbol import ResolvedSymbol
 
 
 TIMEFRAME_REPORT_ORDER = ("D1", "H4", "H1", "M15")
-REPORT_FORMAT_VERSION = "TF_DECISION_TABLE_V1"
+REPORT_FORMAT_VERSION = "TF_DIRECTION_ENTRY_TABLE_V2"
 
 
 def _by_timeframe(records: Sequence[NormalizedTCState]) -> Mapping[str, NormalizedTCState]:
@@ -30,46 +30,42 @@ def _provenance_rows(values: Sequence[Any] | None) -> list[dict[str, Any]]:
     return rows
 
 
-def _decision_label(record: NormalizedTCState) -> str | None:
+def _tc_direction(record: NormalizedTCState) -> str:
+    if record.entry_direction in {"LONG", "SHORT"}:
+        return record.entry_direction
+    env = (record.environment_direction or "").lower()
+    if env == "bullish":
+        return "LONG"
+    if env == "bearish":
+        return "SHORT"
+    if env == "neutral":
+        return "NEUTRAL"
+    return "NONE"
+
+
+def _entry_decision_label(record: NormalizedTCState) -> str:
     direction = record.entry_direction if record.entry_direction in {"LONG", "SHORT"} else None
-
     if record.trade_state == "ACTIONABLE":
-        if direction == "LONG":
-            return "🟢 LONG"
-        if direction == "SHORT":
-            return "🔴 SHORT"
-        return None
-
+        return direction or "判定保留"
     if record.trade_state == "WAIT":
         if direction == "LONG":
-            return "🟡 LONG待ち"
+            return "LONG候補"
         if direction == "SHORT":
-            return "🟡 SHORT待ち"
-        return "🟡 WAIT"
-
+            return "SHORT候補"
+        return "待機"
     if record.trade_state == "INVALID":
-        if direction == "LONG":
-            return "⚪ LONG無効"
-        if direction == "SHORT":
-            return "⚪ SHORT無効"
-        return "⚪ INVALID"
-
-    # UNDETERMINED or unknown means there is no reportable judgement.
-    return None
+        return "無効"
+    return "判定保留"
 
 
 def build_timeframe_decision_rows(
     normalized_records: Sequence[NormalizedTCState],
 ) -> list[dict[str, Any]]:
-    """Build the fixed user-facing D1/H4/H1/M15 report rows.
+    """Build the fixed user-facing per-symbol table rows.
 
-    Rules:
-    - fixed order: D1 -> H4 -> H1 -> M15;
-    - M15 is absent when it was not acquired;
-    - a timeframe with no reportable judgement is absent;
-    - no confidence/score field is created;
-    - Entry/SL/TP values are copied only from that timeframe's TC normalized record;
-    - up to the first three Native take-profit values are displayed, without synthesis.
+    D1/H4/H1 are always represented. Missing evidence is explicitly shown as
+    判定保留 and is never converted into a TC direction of NONE.
+    M15 is shown only when it was actually acquired.
     """
     records = _by_timeframe(normalized_records)
     rows: list[dict[str, Any]] = []
@@ -77,25 +73,28 @@ def build_timeframe_decision_rows(
     for timeframe in TIMEFRAME_REPORT_ORDER:
         record = records.get(timeframe)
         if record is None:
+            if timeframe == "M15":
+                continue
+            rows.append(
+                {
+                    "timeframe": timeframe,
+                    "tc_direction": "—",
+                    "entry_decision": "判定保留",
+                    "entry": None,
+                    "sl": None,
+                    "tp": (),
+                }
+            )
             continue
-
-        decision = _decision_label(record)
-        if decision is None:
-            continue
-
-        take_profits = list(record.take_profits[:3])
-        while len(take_profits) < 3:
-            take_profits.append(None)
 
         rows.append(
             {
                 "timeframe": timeframe,
-                "decision": decision,
+                "tc_direction": _tc_direction(record),
+                "entry_decision": _entry_decision_label(record),
                 "entry": record.entry_price,
                 "sl": record.stop_loss,
-                "tp1": take_profits[0],
-                "tp2": take_profits[1],
-                "tp3": take_profits[2],
+                "tp": tuple(record.take_profits),
             }
         )
 
@@ -104,33 +103,34 @@ def build_timeframe_decision_rows(
 
 def _display_value(value: Any) -> str:
     if value is None or value == "":
-        return "—"
+        return "なし"
     return str(value)
 
 
-def format_timeframe_decision_table(rows: Sequence[Mapping[str, Any]]) -> str:
-    """Render the fixed TC per-symbol report table as Markdown.
+def _display_tp(values: Any) -> str:
+    if not values:
+        return "なし"
+    return " / ".join(str(value) for value in values)
 
-    Empty rows intentionally produce an empty string: when there is no judgement,
-    no empty placeholder table is shown.
-    """
+
+def format_timeframe_decision_table(rows: Sequence[Mapping[str, Any]]) -> str:
+    """Render the fixed six-column TC per-symbol table as Markdown."""
     if not rows:
         return ""
 
     lines = [
-        "| TF | 判定 | Entry | SL | TP1 | TP2 | TP3 |",
-        "|---|---|---:|---:|---:|---:|---:|",
+        "| TF | TC方向 | ENTRY判定 | Entry | SL | TP |",
+        "|---|---|---|---:|---:|---|",
     ]
     for row in rows:
         lines.append(
-            "| {timeframe} | {decision} | {entry} | {sl} | {tp1} | {tp2} | {tp3} |".format(
+            "| {timeframe} | {tc_direction} | {entry_decision} | {entry} | {sl} | {tp} |".format(
                 timeframe=_display_value(row.get("timeframe")),
-                decision=_display_value(row.get("decision")),
+                tc_direction=_display_value(row.get("tc_direction")),
+                entry_decision=_display_value(row.get("entry_decision")),
                 entry=_display_value(row.get("entry")),
                 sl=_display_value(row.get("sl")),
-                tp1=_display_value(row.get("tp1")),
-                tp2=_display_value(row.get("tp2")),
-                tp3=_display_value(row.get("tp3")),
+                tp=_display_tp(row.get("tp")),
             )
         )
     return "\n".join(lines)

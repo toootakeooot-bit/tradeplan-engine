@@ -6,6 +6,7 @@ on:
       - feature/tc-v1
       - feature/tc5-15-tf-cache
       - feature/tc5-16-host-scheduler
+      - feature/tc5-18-last-successful-reuse
   workflow_dispatch:
 
 jobs:

@@ -85,30 +85,27 @@ class NotificationTests(unittest.TestCase):
         rows = [
             {
                 "timeframe": "D1",
-                "decision": "🔴 SHORT",
+                "tc_direction": "SHORT",
+                "entry_decision": "SHORT",
                 "entry": 155.650,
                 "sl": 157.339,
-                "tp1": 155.650,
-                "tp2": 154.000,
-                "tp3": 152.742,
+                "tp": (155.650, 154.000, 152.742),
             },
             {
                 "timeframe": "H4",
-                "decision": "🟢 LONG",
+                "tc_direction": "LONG",
+                "entry_decision": "LONG",
                 "entry": 155.655,
                 "sl": 154.900,
-                "tp1": 156.200,
-                "tp2": 156.800,
-                "tp3": 157.500,
+                "tp": (156.200, 156.800, 157.500),
             },
             {
                 "timeframe": "H1",
-                "decision": "🟢 LONG",
+                "tc_direction": "NEUTRAL",
+                "entry_decision": "待機",
                 "entry": 155.662,
                 "sl": 154.850,
-                "tp1": 156.695,
-                "tp2": 157.000,
-                "tp3": 157.500,
+                "tp": (156.695, 157.000, 157.500),
             },
         ]
         payload = build_spot_payload(
@@ -126,10 +123,11 @@ class NotificationTests(unittest.TestCase):
             runtime_usage=self.usage,
         )
         _, body = format_gmail_message(payload)
-        self.assertIn("| TF | 判定 | Entry | SL | TP1 | TP2 | TP3 |", body)
-        self.assertIn("| D1 | 🔴 SHORT |", body)
-        self.assertIn("| H4 | 🟢 LONG |", body)
-        self.assertIn("| H1 | 🟢 LONG |", body)
+        self.assertIn("| TF | TC方向 | ENTRY判定 | Entry | SL | TP |", body)
+        self.assertIn("| D1 | SHORT | SHORT |", body)
+        self.assertIn("| H4 | LONG | LONG |", body)
+        self.assertIn("| H1 | NEUTRAL | 待機 |", body)
+        self.assertIn("156.695 / 157.0 / 157.5", body)
         self.assertNotIn("| M15 |", body)
         self.assertNotIn("確度", body)
         self.assertNotIn("0.75", body)

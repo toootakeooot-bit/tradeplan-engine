@@ -182,6 +182,28 @@ class TimeframeCache:
         temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         temporary.replace(self.storage_path)
 
+    def get_last_successful_current(
+        self,
+        *,
+        canonical_symbol: str,
+        provider: str,
+        provider_symbol: str,
+        timeframe: str,
+        now: datetime | None = None,
+    ) -> CacheLookup | None:
+        """Return the last successfully persisted CURRENT for one symbol/TF.
+
+        Resolution is intentionally global across run/cycle boundaries. A later
+        cycle must not require the evidence to have been produced inside that
+        same cycle. Failed LIVE attempts are tracked separately in retry state
+        and never overwrite this last successful value.
+        """
+        item = self._items.get(self._key(canonical_symbol, provider, provider_symbol, timeframe))
+        if item is None:
+            return None
+        age = max(0, int((_utc(now) - _parse_iso(item.fetched_at)).total_seconds()))
+        return CacheLookup(item=item, cache_age_seconds=age, cache_status=item.cache_status)
+
     def get_latest(
         self,
         *,
@@ -191,11 +213,14 @@ class TimeframeCache:
         timeframe: str,
         now: datetime | None = None,
     ) -> CacheLookup | None:
-        item = self._items.get(self._key(canonical_symbol, provider, provider_symbol, timeframe))
-        if item is None:
-            return None
-        age = max(0, int((_utc(now) - _parse_iso(item.fetched_at)).total_seconds()))
-        return CacheLookup(item=item, cache_age_seconds=age, cache_status=item.cache_status)
+        """Backward-compatible alias for get_last_successful_current()."""
+        return self.get_last_successful_current(
+            canonical_symbol=canonical_symbol,
+            provider=provider,
+            provider_symbol=provider_symbol,
+            timeframe=timeframe,
+            now=now,
+        )
 
     def put(
         self,

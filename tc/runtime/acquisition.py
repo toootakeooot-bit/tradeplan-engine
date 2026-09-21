@@ -12,7 +12,6 @@ from tc.runtime.tf_cache import CacheLookup, TimeframeCache
 JST = timezone(timedelta(hours=9))
 SCHEDULED_SYMBOLS: Tuple[str, ...] = ("GOLD", "USDJPY", "US100")
 H1_SPOT_MAX_AGE_SECONDS = 90 * 60
-EARLY_SLOT_H4_REFRESH_AFTER_SECONDS = 4 * 60 * 60
 
 
 @dataclass(frozen=True)
@@ -23,11 +22,11 @@ class PeriodicSlot:
 
 
 PERIODIC_SLOTS: Tuple[PeriodicSlot, ...] = (
-    PeriodicSlot("05:03", "05:03", ("H1",)),
-    PeriodicSlot("09:03", "09:03", ("D1", "H4", "H1")),
-    PeriodicSlot("12:03", "12:03", ("H1",)),
-    PeriodicSlot("17:03", "17:03", ("H4", "H1")),
-    PeriodicSlot("21:03", "21:03", ("H4", "H1")),
+    PeriodicSlot("06:03", "06:03", ("D1", "H4", "H1")),
+    PeriodicSlot("11:03", "11:03", ("H1",)),
+    PeriodicSlot("15:03", "15:03", ("H1",)),
+    PeriodicSlot("19:03", "19:03", ("H4", "H1")),
+    PeriodicSlot("23:03", "23:03", ("H1",)),
 )
 
 BASE_PERIODIC_CALLS_PER_DAY = sum(len(slot.live_timeframes) for slot in PERIODIC_SLOTS) * len(SCHEDULED_SYMBOLS)
@@ -36,7 +35,7 @@ BASE_PERIODIC_CALLS_PER_DAY = sum(len(slot.live_timeframes) for slot in PERIODIC
 @dataclass(frozen=True)
 class AcquisitionDecision:
     timeframe: str
-    source_mode: str  # LIVE | CACHE
+    source_mode: str  # LIVE | CACHE | UNAVAILABLE
     reason: str
     cache_lookup: CacheLookup | None = None
 
@@ -59,7 +58,7 @@ class MarketInputResolver:
         raise ValueError(f"unsupported periodic slot: {slot_id}")
 
     def _lookup(self, resolved_symbol: ResolvedSymbol, timeframe: str, now: datetime | None) -> CacheLookup | None:
-        return self.cache.get_latest(
+        return self.cache.get_last_successful_current(
             canonical_symbol=resolved_symbol.canonical_symbol,
             provider=resolved_symbol.provider,
             provider_symbol=resolved_symbol.provider_symbol,
@@ -127,25 +126,7 @@ class MarketInputResolver:
             elif self._retry_pending(resolved_symbol, timeframe):
                 decisions.append(AcquisitionDecision(timeframe, "LIVE", "RETRY_PENDING_NEXT_SLOT", lookup))
             elif lookup is not None:
-                decisions.append(AcquisitionDecision(timeframe, "CACHE", "PERIODIC_CACHE_REUSE", lookup))
+                decisions.append(AcquisitionDecision(timeframe, "CACHE", "LAST_SUCCESSFUL_CURRENT_REUSE", lookup))
             else:
-                decisions.append(AcquisitionDecision(timeframe, "LIVE", "CACHE_MISSING_FALLBACK"))
-        return tuple(decisions)
-
-    def needs_0503_h4_refresh(
-        self,
-        *,
-        resolved_symbol: ResolvedSymbol,
-        h1: NormalizedTCState,
-        now: datetime | None = None,
-    ) -> bool:
-        """Refresh H4 at 05:03 only for an H1 entry candidate.
-
-        One H4 interval (four hours) is the freshness threshold. Therefore the
-        normal 21:03 -> 05:03 eight-hour gap refreshes H4 when H1 is ACTIONABLE,
-        while a more recent Spot-refreshed H4 can still be reused.
-        """
-        if h1.trade_state != "ACTIONABLE":
-            return False
-        lookup = self._lookup(resolved_symbol, "H4", now)
-        return lookup is None or lookup.cache_age_seconds > EARLY_SLOT_H4_REFRESH_AFTER_SECONDS
+                decisions.append(AcquisitionDecision(timeframe, "UNAVAILABLE", "LAST_SUCCESSFUL_CURRENT_MISSING"))
+        return tuple(decisions)\n

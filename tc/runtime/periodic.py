@@ -139,7 +139,7 @@ def run_periodic_symbol(
     now: datetime | None = None,
     source_run_id: str | None = None,
 ) -> PeriodicSymbolResult:
-    """Run one NORMAL periodic symbol cycle using the shared TC5-15 cache.
+    """Run one NORMAL periodic symbol cycle using the shared TC5-18 last-successful cache.
 
     Scheduled TFs are LIVE. Non-scheduled D1/H4 are resolved from CACHE. Any
     retry_pending TF is attempted once at the next slot. A failed Native call is
@@ -159,6 +159,24 @@ def run_periodic_symbol(
 
     for decision in decisions:
         execution_order += 1
+        if decision.source_mode == "UNAVAILABLE":
+            provenance.append(
+                TFProvenance(
+                    timeframe=decision.timeframe,
+                    source_mode="UNAVAILABLE",
+                    fetched_at=None,
+                    cache_age_seconds=None,
+                    reason=decision.reason,
+                )
+            )
+            errors.append(
+                PeriodicError(
+                    decision.timeframe,
+                    "REUSE_UNAVAILABLE",
+                    "no last successful CURRENT exists for this provider/symbol/timeframe",
+                )
+            )
+            continue
         if decision.source_mode == "CACHE":
             if decision.cache_lookup is None:
                 errors.append(PeriodicError(decision.timeframe, "CACHE_RESOLUTION_INVALID", "CACHE selected without evidence"))
@@ -188,38 +206,6 @@ def run_periodic_symbol(
         normalized_records.append(normalized)
         provenance.append(tf_provenance)
         results[decision.timeframe] = _tf_result(normalized)
-
-    # 05:03 normally reuses the previous 21:03 H4. Refresh it only if H1 is an
-    # entry candidate and the H4 evidence is older than one H4 interval.
-    h1 = next((r for r in normalized_records if r.timeframe == "H1"), None)
-    if slot_id == "05:03" and h1 is not None and resolver.needs_0503_h4_refresh(resolved_symbol=resolved, h1=h1, now=now):
-        execution_order += 1
-        try:
-            raw, normalized, tf_provenance = _live_one(
-                slot_id=slot_id,
-                run_id=run_id,
-                resolved=resolved,
-                timeframe="H4",
-                execution_order=execution_order,
-                reason="0503_ACTIONABLE_H1_CONDITIONAL_H4_REFRESH",
-                client=client,
-                raw_sink=raw_sink,
-                cache=cache,
-                now=now,
-            )
-            # Replace the earlier cached H4 evidence for this run.
-            raw_records = [r for r in raw_records if not (isinstance(r.get("wrapper_metadata"), Mapping) and r["wrapper_metadata"].get("timeframe") == "H4")]
-            normalized_records = [r for r in normalized_records if r.timeframe != "H4"]
-            provenance = [p for p in provenance if p.timeframe != "H4"]
-            raw_records.append(raw)
-            normalized_records.append(normalized)
-            provenance.append(tf_provenance)
-            results["H4"] = _tf_result(normalized)
-        except OrchestratorError as exc:
-            # H4 was explicitly deemed too stale for an actionable 05:03 H1.
-            # Do not silently finalize against that stale setup evidence.
-            results.pop("H4", None)
-            errors.append(PeriodicError("H4", exc.code, str(exc)))
 
     aggregate: TCRoleAggregate | None = None
     if all(tf in results for tf in ("D1", "H4", "H1")):

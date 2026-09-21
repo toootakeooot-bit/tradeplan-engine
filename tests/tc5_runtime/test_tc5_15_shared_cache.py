@@ -153,6 +153,49 @@ class CachePersistenceTests(unittest.TestCase):
             self.assertEqual(second.item.normalized.timeframe, "D1")
 
 
+class CacheFailureRetentionTests(unittest.TestCase):
+    def test_failure_does_not_overwrite_last_successful_current(self):
+        resolved = resolve_symbol("GOLD")
+        cache = TimeframeCache()
+        first_at = datetime(2026, 9, 15, 0, 3, tzinfo=UTC)
+        failed_at = first_at + timedelta(hours=5)
+        put_cache(cache, resolved, "H4", first_at, state="ACTIONABLE", direction="LONG")
+        before = cache.get_last_successful_current(
+            canonical_symbol=resolved.canonical_symbol,
+            provider=resolved.provider,
+            provider_symbol=resolved.provider_symbol,
+            timeframe="H4",
+            now=failed_at,
+        )
+        cache.mark_failure(
+            canonical_symbol=resolved.canonical_symbol,
+            provider=resolved.provider,
+            provider_symbol=resolved.provider_symbol,
+            timeframe="H4",
+            failure_code="NATIVE_CALL_FAILED",
+            now=failed_at,
+        )
+        after = cache.get_last_successful_current(
+            canonical_symbol=resolved.canonical_symbol,
+            provider=resolved.provider,
+            provider_symbol=resolved.provider_symbol,
+            timeframe="H4",
+            now=failed_at,
+        )
+        self.assertIsNotNone(before)
+        self.assertIsNotNone(after)
+        self.assertEqual(after.item.record_id, before.item.record_id)
+        self.assertEqual(after.item.fetched_at, before.item.fetched_at)
+        self.assertIsNotNone(
+            cache.retry_pending(
+                canonical_symbol=resolved.canonical_symbol,
+                provider=resolved.provider,
+                provider_symbol=resolved.provider_symbol,
+                timeframe="H4",
+            )
+        )
+
+
 class ResolverTests(unittest.TestCase):
     def setUp(self):
         self.now = datetime(2026, 9, 15, 6, 0, tzinfo=UTC)
@@ -183,7 +226,7 @@ class ResolverTests(unittest.TestCase):
             now=self.now - timedelta(minutes=1),
         )
         decisions = MarketInputResolver(self.cache).resolve_periodic(
-            slot_id="12:03",
+            slot_id="11:03",
             resolved_symbol=self.resolved,
             now=self.now,
         )

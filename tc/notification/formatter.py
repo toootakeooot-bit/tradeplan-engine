@@ -41,19 +41,20 @@ def _timeframe_table_lines(rows: Sequence[Mapping[str, Any]]) -> list[str]:
         return []
 
     lines = [
-        "| TF | 判定 | Entry | SL | TP1 | TP2 | TP3 |",
-        "|---|---|---:|---:|---:|---:|---:|",
+        "| TF | TC方向 | ENTRY判定 | Entry | SL | TP |",
+        "|---|---|---|---:|---:|---|",
     ]
     for row in rows:
+        tp = row.get("tp") or ()
+        tp_text = " / ".join(str(value) for value in tp) if tp else "なし"
         lines.append(
-            "| {timeframe} | {decision} | {entry} | {sl} | {tp1} | {tp2} | {tp3} |".format(
+            "| {timeframe} | {tc_direction} | {entry_decision} | {entry} | {sl} | {tp} |".format(
                 timeframe=_format_value(row.get("timeframe")),
-                decision=_format_value(row.get("decision")),
-                entry=_format_value(row.get("entry")),
-                sl=_format_value(row.get("sl")),
-                tp1=_format_value(row.get("tp1")),
-                tp2=_format_value(row.get("tp2")),
-                tp3=_format_value(row.get("tp3")),
+                tc_direction=_format_value(row.get("tc_direction")),
+                entry_decision=_format_value(row.get("entry_decision")),
+                entry="なし" if row.get("entry") is None else _format_value(row.get("entry")),
+                sl="なし" if row.get("sl") is None else _format_value(row.get("sl")),
+                tp=tp_text,
             )
         )
     return lines

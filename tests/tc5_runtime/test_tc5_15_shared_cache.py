@@ -105,19 +105,19 @@ def put_cache(cache, resolved, timeframe, at, state="WAIT", direction=None, lowe
 
 
 class ScheduleTests(unittest.TestCase):
-    def test_fixed_schedule_is_27_base_calls_for_three_symbols(self):
+    def test_fixed_schedule_is_24_base_calls_for_three_symbols(self):
         self.assertEqual(SCHEDULED_SYMBOLS, ("GOLD", "USDJPY", "US100"))
         self.assertEqual(
             [(s.slot_id, s.live_timeframes) for s in PERIODIC_SLOTS],
             [
-                ("05:03", ("H1",)),
-                ("09:03", ("D1", "H4", "H1")),
-                ("12:03", ("H1",)),
-                ("17:03", ("H4", "H1")),
-                ("21:03", ("H4", "H1")),
+                ("06:03", ("D1", "H4", "H1")),
+                ("11:03", ("H1",)),
+                ("15:03", ("H1",)),
+                ("19:03", ("H4", "H1")),
+                ("23:03", ("H1",)),
             ],
         )
-        self.assertEqual(BASE_PERIODIC_CALLS_PER_DAY, 27)
+        self.assertEqual(BASE_PERIODIC_CALLS_PER_DAY, 24)
 
 
 class CachePersistenceTests(unittest.TestCase):
@@ -159,11 +159,11 @@ class ResolverTests(unittest.TestCase):
         self.resolved = resolve_symbol("USDJPY#")
         self.cache = TimeframeCache()
 
-    def test_1203_reuses_d1_h4_and_fetches_h1(self):
+    def test_1103_reuses_d1_h4_and_fetches_h1(self):
         put_cache(self.cache, self.resolved, "D1", self.now - timedelta(hours=3))
         put_cache(self.cache, self.resolved, "H4", self.now - timedelta(hours=3))
         decisions = MarketInputResolver(self.cache).resolve_periodic(
-            slot_id="12:03",
+            slot_id="11:03",
             resolved_symbol=self.resolved,
             now=self.now,
         )
@@ -191,23 +191,31 @@ class ResolverTests(unittest.TestCase):
         self.assertEqual(h4.source_mode, "LIVE")
         self.assertEqual(h4.reason, "RETRY_PENDING_NEXT_SLOT")
 
-    def test_0503_h4_refresh_only_when_h1_actionable_and_h4_old(self):
-        put_cache(self.cache, self.resolved, "H4", self.now - timedelta(hours=8))
-        resolver = MarketInputResolver(self.cache)
-        self.assertTrue(
-            resolver.needs_0503_h4_refresh(
-                resolved_symbol=self.resolved,
-                h1=normalized("H1", state="ACTIONABLE", direction="LONG"),
-                now=self.now,
-            )
+    def test_1503_reuses_last_successful_h4_even_when_older_than_fixed_ttl(self):
+        put_cache(self.cache, self.resolved, "D1", self.now - timedelta(hours=9))
+        put_cache(self.cache, self.resolved, "H4", self.now - timedelta(hours=9))
+        decisions = MarketInputResolver(self.cache).resolve_periodic(
+            slot_id="15:03",
+            resolved_symbol=self.resolved,
+            now=self.now,
         )
-        self.assertFalse(
-            resolver.needs_0503_h4_refresh(
-                resolved_symbol=self.resolved,
-                h1=normalized("H1", state="WAIT"),
-                now=self.now,
-            )
+        by_tf = {d.timeframe: d for d in decisions}
+        self.assertEqual(by_tf["D1"].source_mode, "CACHE")
+        self.assertEqual(by_tf["H4"].source_mode, "CACHE")
+        self.assertEqual(by_tf["H4"].reason, "LAST_SUCCESSFUL_CURRENT_REUSE")
+        self.assertEqual(by_tf["H1"].source_mode, "LIVE")
+
+    def test_missing_unscheduled_tf_is_unavailable_not_none_or_implicit_live(self):
+        decisions = MarketInputResolver(self.cache).resolve_periodic(
+            slot_id="11:03",
+            resolved_symbol=self.resolved,
+            now=self.now,
         )
+        by_tf = {d.timeframe: d for d in decisions}
+        self.assertEqual(by_tf["D1"].source_mode, "UNAVAILABLE")
+        self.assertEqual(by_tf["H4"].source_mode, "UNAVAILABLE")
+        self.assertEqual(by_tf["D1"].reason, "LAST_SUCCESSFUL_CURRENT_MISSING")
+        self.assertEqual(by_tf["H1"].source_mode, "LIVE")
 
 
 class SpotCacheFirstTests(unittest.TestCase):
